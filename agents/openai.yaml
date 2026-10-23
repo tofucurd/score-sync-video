@@ -1,0 +1,6 @@
+interface:
+  display_name: "曲谱同步视频与封面"
+  short_description: "从 MusicXML、原谱 PDF 和真实录音制作同风格流动曲谱视频与双比例封面"
+  default_prompt: "使用 $score-sync-video，把我提供的 MusicXML、原谱 PDF 和录音制作成曲谱同步视频与两种比例封面，先交预览供我确认。"
+policy:
+  allow_implicit_invocation: true
