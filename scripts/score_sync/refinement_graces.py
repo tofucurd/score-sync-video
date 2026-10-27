@@ -117,6 +117,12 @@ def match_grace_groups(groups, ts, rise, pitch_low, qgrid, tgrid):
         if group['ownership'] == 'unresolved':
             out.append({**base, 'status':'unresolved_notation_ownership', 'clusters':[]})
             continue
+        if any(e.get('pitch') is None for e in group['members']):
+            # Percussion notation has no pitched fundamental to compare here.
+            # Retain its source identity and require transient/recording review;
+            # neither invent a MIDI pitch nor discard it from the visible score.
+            out.append({**base, 'status':'unpitched_grace_requires_transient_review', 'clusters':[]})
+            continue
         end = float(np.interp(group['q'], qgrid, tgrid))
         previous_q = max((e['q'] for e in group['previous_events'] if e['q'] < group['q']), default=group['q']-1)
         previous = float(np.interp(previous_q, qgrid, tgrid))

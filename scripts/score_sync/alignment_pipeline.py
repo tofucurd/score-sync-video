@@ -6,6 +6,7 @@ times belong in the project, never in this algorithm. Rendering is not involved.
 from pathlib import Path
 from collections import Counter
 from copy import deepcopy
+from fractions import Fraction
 import gzip
 import hashlib
 import json
@@ -76,17 +77,31 @@ def validate_constraints(data, score, duration):
 
 
 def correct_guide(qgrid, tgrid, constraints):
-    qgrid, tgrid = np.asarray(qgrid, float), np.asarray(tgrid, float)
-    if len(qgrid) < 2 or np.any(np.diff(qgrid) <= 0):
-        raise ValueError('Guide score grid must increase')
-    points = sorted((q, a['seconds']) for q, a in constraints.items() if qgrid[0] <= q <= qgrid[-1])
-    qq = [qgrid[0]] + [q for q,t in points if qgrid[0] < q < qgrid[-1]] + [qgrid[-1]]
-    residual = [constraints.get(float(qgrid[0]), {}).get('seconds', tgrid[0])-tgrid[0]]
-    residual += [t-float(np.interp(q, qgrid, tgrid)) for q,t in points if qgrid[0] < q < qgrid[-1]]
-    residual += [constraints.get(float(qgrid[-1]), {}).get('seconds', tgrid[-1])-tgrid[-1]]
-    result = tgrid + np.interp(qgrid, qq, residual)
-    if not np.all(np.isfinite(result)) or np.any(np.diff(result) <= 0):
-        raise ValueError('Reviewed guide is not strictly monotone; inspect boundary evidence')
+    """Warp a candidate guide in its time domain between reviewed bounds.
+
+    Adding a linear-in-q offset to a nonlinear guide can reverse its order.
+    A positive affine time warp in each bounded interval retains the guide's
+    internal tempo proportions and is monotone. This only seeds the subsequent
+    state/attack matching; it is not the delivered clock or a constant tempo.
+    """
+    qgrid=np.asarray(qgrid,float);tgrid=np.asarray(tgrid,float)
+    if len(qgrid)<2 or len(qgrid)!=len(tgrid) or not np.all(np.isfinite(qgrid+tgrid)):
+        raise ValueError('Invalid candidate guide')
+    if np.any(np.diff(qgrid)<=0) or np.any(np.diff(tgrid)<=0):
+        raise ValueError('Candidate guide must be strictly monotone before timing constraints')
+    if not constraints:
+        return tgrid.copy()
+    bounds={float(qgrid[0]):float(tgrid[0]),float(qgrid[-1]):float(tgrid[-1])}
+    for q,row in constraints.items():
+        if qgrid[0]<=q<=qgrid[-1]:
+            bounds[float(q)]=float(row['seconds'])
+    qq=np.array(sorted(bounds));target=np.array([bounds[q] for q in qq])
+    source=np.interp(qq,qgrid,tgrid)
+    if not np.all(np.isfinite(target)) or np.any(np.diff(target)<=0):
+        raise ValueError('Reviewed guide bounds are not monotone in time')
+    result=np.interp(tgrid,source,target)
+    if np.any(np.diff(result)<=0):
+        raise ValueError('Constrained guide is not strictly monotone')
     return result
 
 
@@ -132,12 +147,10 @@ def register_coarse_guide(score, features, pitch_low, pitch_high, max_axis=2000)
     stride = max(19, math.ceil(len(features['ct'])/max_axis))
     y = descriptor(features['cqt'][::stride], pitch_low)
     times = features['ct'][::stride]
-    ts, rms = features['ts'], features['rms']
-    floor = float(np.median(rms[ts > ts[-1]-.5]))
-    active = ts[rms > max(floor*5, float(rms.max())*.005)]
-    if len(active):
-        keep = times <= min(times[-1], active[-1]+1)
-        times, y = times[keep], y[keep]
+    # Quiet closing phrases can sit near a live recording's background level.
+    # A tail RMS threshold is not evidence that those score events are absent.
+    # Keep the complete recording search domain; release estimation and reviewed
+    # timing constraints handle the distinction between last attack and file end.
     if len(times) < 2 or len(x) < 2:
         raise ValueError('Insufficient score/audio extent for coarse sequence alignment')
     steps = np.array([[1,1], [1,2], [1,3], [1,4], [2,1], [3,1], [4,1]])
@@ -153,9 +166,12 @@ def register_coarse_guide(score, features, pitch_low, pitch_high, max_axis=2000)
 def banded_sequence_path(x, y, a, b, centers, width, rates, terminal_radius=100):
     n, nt, w = len(x), len(y), width*2+1
     back = np.zeros((n,w), np.uint8)
-    previous = np.full(w, 1e15)
-    previous2 = previous.copy()
-    steps = ((1,1,1), (2,1,2), (3,2,1), (5,1,3), (6,1,4), (7,1,5), (8,1,6), (9,1,7), (10,1,8))
+    # Either grid can be denser locally. Keep symmetric slopes from 1/8 to 8
+    # without coarsening the score or the recording's temporal resolution.
+    history = np.full((8,w), 1e15)
+    steps = ((1,1,1), (2,1,2), (3,2,1), (5,1,3), (6,1,4), (7,1,5),
+             (8,1,6), (9,1,7), (10,1,8), (11,3,1), (12,4,1),
+             (13,5,1), (14,6,1), (15,7,1), (16,8,1))
     for i in range(n):
         current = np.full(w, 1e15)
         base = centers[i]-width
@@ -184,11 +200,12 @@ def banded_sequence_path(x, y, a, b, centers, width, rates, terminal_radius=100)
                     ratio = dj/di/rates[i]
                     if ratio < .4 or ratio > 2.5:
                         continue
-                    value = (previous if di == 1 else previous2)[kk] + cost*(di+dj)/2 + .12*np.log(ratio)**2
+                    value = history[(i-di)%8,kk] + cost*(di+dj)/2 + .12*np.log(ratio)**2
                     if value < best:
                         best, chosen = value, code
             current[k], back[i,k] = best, chosen
-        previous2, previous = previous, current
+        history[i%8] = current
+    previous = history[(n-1)%8].copy()
     for k in range(w):
         if abs(k-width) > terminal_radius:
             previous[k] = 1e15
@@ -210,6 +227,8 @@ def banded_sequence_path(x, y, a, b, centers, width, rates, terminal_radius=100)
             i -= 1; j -= 2
         elif code == 3:
             i -= 2; j -= 1
+        elif code >= 11:
+            i -= code-8; j -= 1
         elif code >= 5:
             i -= 1; j -= code-2
         else:
@@ -256,7 +275,7 @@ def dense_sequence(score, features, lo, hi, guide_q, guide_t, constraints, confi
     left, right = np.maximum(sq[0], sq-2), np.minimum(sq[-1], sq+2)
     tempo = (np.interp(right,sq,guide)-np.interp(left,sq,guide))/np.maximum(.01,right-left)
     tempo = median_filter(tempo, size=max(3,int(4/step))|1)
-    rates = np.clip(tempo*step/hop, .4, 8.)
+    rates = np.clip(tempo*step/hop, 1/8, 8.)
     path = banded_sequence_path(x.astype(np.float32), y.astype(np.float32), a.astype(np.float32),
         b.astype(np.float32), np.round(guide/hop).astype(np.int64), width, rates,
         terminal_radius=round(float(config.get('terminal_search_seconds',1.))/hop))
@@ -326,13 +345,32 @@ def refine_attack_chain(events, ts, rise, lo, qgrid, tgrid, constraints=None, co
     return qs,np.array(selected[::-1]),rows[::-1]
 
 
-def export_clock(score, audio, qgrid, tgrid, ts, rms, guide_q=None, guide_t=None):
+def export_clock(score, audio, qgrid, tgrid, ts, rms, guide_q=None, guide_t=None,
+                 terminal_constraint=None):
     sr,samples=audio['sample_rate'],audio['samples'];total=qvalue(score['total_q'])
     last=float(tgrid[-1]);tail=rms[ts>ts[-1]-.4];local=rms[(ts>=last)&(ts<last+2)]
     threshold=max(float(np.median(tail))*4,float(np.max(local))*.02 if len(local) else 0)
     active=ts[(ts>last)&(rms>threshold)]
     release=min(samples/sr,max(last+.15,float(active[-1])) if len(active) else last+.5)
-    qnodes=sorted(set([0.,total]+[qvalue(e['q']) for e in score['events']]+[qvalue(e['q'])+qvalue(e['duration']) for e in score['events']]))
+    release_evidence={'seconds':release,'threshold':threshold,'criterion':'RMS decay display projection'}
+    if terminal_constraint is not None:
+        if terminal_constraint.get('kind')!='clock':
+            raise ValueError('Terminal projection must be a source-bound clock constraint')
+        target=float(terminal_constraint['seconds'])
+        tolerance=float(terminal_constraint.get('tolerance_seconds',.015))
+        selected=target if terminal_constraint.get('exact') else float(np.clip(release,target-tolerance,target+tolerance))
+        if not np.isfinite(selected) or not last<selected<=samples/sr:
+            raise ValueError('Terminal display constraint must follow the last attack within the recording')
+        release_evidence.update(automatic_seconds=release,seconds=selected,
+            criterion='reviewed terminal display constraint',constraint=dict(terminal_constraint))
+        release=selected
+    # Adjacent tuplets share an exact rational boundary. Adding their converted
+    # floats first can manufacture two q values one ULP apart at the same sample.
+    rational_nodes={Fraction(0),Fraction(*score['total_q'])}
+    for event in score['events']:
+        onset=Fraction(*event['q'])
+        rational_nodes.update((onset,onset+Fraction(*event['duration'])))
+    qnodes=[float(q) for q in sorted(rational_nodes)]
     times=np.interp(qnodes,qgrid,tgrid);after=np.array(qnodes)>qgrid[-1]
     before=np.array(qnodes)<qgrid[0]
     if np.any(before):
@@ -351,7 +389,7 @@ def export_clock(score, audio, qgrid, tgrid, ts, rms, guide_q=None, guide_t=None
         sample_rate=sr,samples=samples,source_sha256=score.get('source_sha256'),flags=[],
         method='register-aware coarse DTW + dense state/attack sequence + ordered pitch-attack chain + source-ordered ornaments',
         review_required=True,accuracy_claim=None,physical_attacks_measured=False,
-        revision_evidence={'release':{'seconds':release,'threshold':threshold,'criterion':'RMS decay display projection'},
+        revision_evidence={'release':release_evidence,
                            'all_physical_attacks_measured':False})
 
 
@@ -492,7 +530,8 @@ def refine_movement(out_dir, *, source_path=None, constraints=None, config=None,
     qdense,tdense,parameters=dense_sequence(score,features,lo,hi,gq,gt,guide_constraints,config)
     corrected=correct_guide(qdense,tdense,reviewed)
     qs,tt,chain=refine_attack_chain(score['events'],features['ts'],features['rise'],lo,qdense,corrected,reviewed,config)
-    result=export_clock(score,audio,qs,tt,features['ts'],features['rms'],qdense,corrected)
+    result=export_clock(score,audio,qs,tt,features['ts'],features['rms'],qdense,corrected,
+                        terminal_constraint=reviewed.get(qvalue(score['total_q'])))
     result=apply_exact_constraints(result,score,reviewed)
     result['audio_source_sha256']=audio.get('source_sha256')
     result['input_binding']=input_binding

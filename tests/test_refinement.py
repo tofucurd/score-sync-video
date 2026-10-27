@@ -10,6 +10,7 @@ from score_sync.alignment_pipeline import (
     apply_local_clock_patch, export_clock, banded_sequence_path,
     constraints_from_anchors, apply_exact_constraints,
     initial_attack_candidate,
+    register_coarse_guide,
 )
 from score_sync.refinement_graces import source_metadata, build_grace_groups, match_grace_groups
 
@@ -59,6 +60,20 @@ def test_initial_silence_is_not_forced_to_the_dtw_zero_endpoint():
     assert result['reviewed'] is False and not result['physical_attack_measured']
 
 
+def test_coarse_guide_keeps_quiet_music_above_a_live_noise_floor():
+    # The last phrase is soft, not absent. A noisy ending cannot establish that
+    # everything below five times its RMS was already outside the performance.
+    ts=np.arange(0,8,.01)
+    cqt=np.zeros((len(ts),12),dtype=np.float32)
+    notes=[event(str(i),i,pitch=60+i,kind='pitched',is_player=True) for i in range(8)]
+    for i in range(8):cqt[(ts>=i)&(ts<i+1),i]=1
+    rms=np.where(ts<4,.1,.003)
+    features={'ct':ts,'cqt':cqt,'ts':ts,'rms':rms}
+    _,times,metadata=register_coarse_guide({'events':notes,'total_q':[8,1]},features,60,71)
+    assert times[-1]==pytest.approx(ts[::metadata['audio_stride']][-1])
+    assert times[-1]>7.5
+
+
 def test_corrected_guide_rejects_folded_time():
     q=np.arange(4.)
     with pytest.raises(ValueError,match='monotone'):
@@ -71,6 +86,22 @@ def test_banded_dtw_finds_connected_path_with_different_local_rates():
     path=banded_sequence_path(x,y,x,y,np.array([0,1,3,4]),3,np.ones(4),terminal_radius=3)
     assert path[0,0]==0 and abs(path[0,1])<=3
     assert path[-1,0]==3
+    assert np.all(np.diff(path[:,0])>0) and np.all(np.diff(path[:,1])>0)
+
+
+@pytest.mark.parametrize('rate',[.2,1/3,4.])
+def test_banded_dtw_supports_sustained_tempo_ranges_in_both_directions(rate):
+    # A dense score grid can advance several rows within a single audio frame.
+    # A minimum slope of 1/2 otherwise runs out of a narrow corridor even when
+    # the guide is exact. Keep both grids and check the recovered correspondence.
+    centers=np.round(np.arange(401)*rate).astype(np.int64)
+    phase=np.arange(401)/35
+    x=np.column_stack([np.cos(phase),np.sin(phase)]).astype(np.float32)
+    audio_phase=np.arange(centers[-1]+1)/rate/35
+    y=np.column_stack([np.cos(audio_phase),np.sin(audio_phase)]).astype(np.float32)
+    path=banded_sequence_path(x,y,x,y,centers,5,np.full(401,rate),terminal_radius=2)
+    assert path[0,0]==0 and path[-1,0]==400
+    assert np.max(np.abs(path[:,1]-centers[path[:,0]]))<=2
     assert np.all(np.diff(path[:,0])>0) and np.all(np.diff(path[:,1])>0)
 
 
@@ -104,6 +135,39 @@ def test_tail_and_recording_duration_have_separate_roles():
     assert result['physical_attacks_measured'] is False
 
 
+def test_reviewed_terminal_projection_updates_entire_last_sustain():
+    # Several notation endpoints occur after the last attack. Setting just the
+    # final knot after export would leave those endpoints compressed by RMS.
+    notes=[event('a',0),event('b',1),event('c',1)]
+    notes[1]['duration']=[1,1];notes[2]['duration']=[3,1]
+    score={'events':notes,'total_q':[4,1],'source_sha256':'src'}
+    ts=np.arange(0,7,.01);rms=np.full(len(ts),.003)
+    end={'seconds':5.2,'kind':'clock','exact':True,
+         'provenance':'independently reviewed decay display projection, not physical note-off'}
+    result=export_clock(score,{'sample_rate':1000,'samples':7000},
+                        np.array([0.,1.]),np.array([.2,1.2]),ts,rms,
+                        terminal_constraint=end)
+    endpoints={q:t for t,q in result['points'] if t<7000}
+    assert endpoints[2.]==pytest.approx(2533,abs=1)
+    assert endpoints[4.]==5200
+    assert result['points'][-1]==[7000,4.]
+    assert result['revision_evidence']['release']['criterion']=='reviewed terminal display constraint'
+    assert not result['physical_attacks_measured']
+
+
+def test_clock_deduplicates_tuplet_boundaries_before_float_conversion():
+    notes=[event('a',0),event('b',1),event('c',1),event('d',2)]
+    notes[0]['duration']=[4,3]
+    notes[1].update(q=[4,3],duration=[1,3])
+    notes[2].update(q=[5,3],duration=[1,3])
+    score={'events':notes,'total_q':[3,1],'source_sha256':'src'}
+    qs=np.array([0.,4/3,5/3,2.]);times=qs+.2
+    ts=np.arange(0,4,.01);rms=np.where(ts<3,.1,.00001)
+    result=export_clock(score,{'sample_rate':1000,'samples':4000},qs,times,ts,rms)
+    assert sum(q==5/3 for _,q in result['points'])==1
+    assert all(b[0]>a[0] for a,b in zip(result['points'],result['points'][1:]))
+
+
 def test_full_attack_audit_handles_silence_without_fake_accuracy():
     score={'events':[event('a',0),event('b',1)]}
     clock={'points':[[20,0],[100,1],[200,2]],'sample_rate':100}
@@ -129,6 +193,17 @@ def test_unresolved_grace_is_not_assigned_fixed_fifty_ms():
     rows=match_grace_groups([group],np.arange(0,2,.01),np.zeros((200,12)),60,np.array([0.,1.]),np.array([.3,1.2]))
     assert rows[0]['status']=='unresolved_notation_ownership'
     assert rows[0]['clusters']==[]
+
+
+def test_unpitched_grace_requests_transient_review_instead_of_pitch_matching():
+    group={'group_id':'triangle','ownership':'before_following','q':1,
+           'members':[{'id':'g','pitch':None,'kind':'unpitched'}],
+           'ordered_attack_clusters':[['g']],'previous_events':[]}
+    rows=match_grace_groups([group],np.arange(0,2,.01),np.zeros((200,12)),60,
+                           np.array([0.,1.]),np.array([.3,1.2]))
+    assert rows[0]['status']=='unpitched_grace_requires_transient_review'
+    assert rows[0]['clusters']==[]
+    assert not rows[0]['physical_instrument_isolation_claim']
 
 
 @pytest.mark.parametrize('change',['audio_source','route','range','prepared_pcm','missing_binding'])

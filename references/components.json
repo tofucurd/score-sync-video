@@ -1,13 +1,13 @@
 {
   "schema": 1,
   "skill": "score-sync-video",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "versioning_note": "Generic public release. No work-specific presets or datasets are bundled.",
   "components": [
     {
       "id": "workflow",
       "name": "通用流程、输入绑定与交付",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "origin": "章节标题、可继承授权、失败状态",
       "files": {
         "scripts/score_sync.py": "ce19df625180c88ecb9454d17d3d9866ceeed176a0793df15421b91d69194ab6",
@@ -18,7 +18,7 @@
     {
       "id": "reference",
       "name": "外部参考快照接口",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "origin": "读取用户自己提供的已审数据；不附带作品快照",
       "files": {
         "scripts/score_sync/profiles.py": "db8880547ed69e50c7231facd642af634ad91c040027fadcee68ceb2f557c2fa"
@@ -27,18 +27,21 @@
     {
       "id": "score",
       "name": "谱源与原生排谱",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "origin": "全谱校勘兼容、表情虚线、隐藏墨迹",
       "files": {
-        "scripts/score_sync/score.py": "d62906ce36794b67202196355d0c0a7ff0423b2410c409230e6aba18c71f64cc",
+        "scripts/score_sync/score.py": "4c711883425c866516862b4d602e33cb23659386c9cf11dbd8a7a8ecbe3684eb",
         "scripts/score_sync/dashes.py": "bbbb09391e7b7261da17ab5d4166dd88e1eb1c6137007050f039ef45ba1d90ec",
-        "scripts/score_sync/hidden_ink.py": "b94cb8118e1e2abd905a96c27dc36c400069c7a55e54c9a0a37ba25d52a23961"
-      }
+        "scripts/score_sync/hidden_ink.py": "b94cb8118e1e2abd905a96c27dc36c400069c7a55e54c9a0a37ba25d52a23961",
+        "scripts/score_sync/keys.py": "823c9e3ef17c76e53132f521a675838449871ffe97da7a76d1a480a21608b721"
+      },
+      "local_revision": "native-compat-2026-10-24-unpublished",
+      "local_validation": "111 tests passed; actual source-only M4/M5 MEI and Chromium stills checked; all three independent code reviewers passed scoped/local keys."
     },
     {
       "id": "engraving_overrides",
       "name": "受校验的排版覆盖",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "origin": "按源身份验证的局部排版修订",
       "files": {
         "scripts/score_sync/engraving_overrides.py": "9b20845a3d318f81e1a222685336be072b61cecef0178bce8c4ebf93c6d8cb1c",
@@ -48,27 +51,27 @@
     {
       "id": "alignment",
       "name": "连续录音对齐",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "origin": "多阶段连续匹配与受约束细化",
       "files": {
         "scripts/score_sync/alignment.py": "447f24e3a4ea8b599e00aa8481644727d5eb76a1df6728492b8d2efd66921420",
-        "scripts/score_sync/alignment_pipeline.py": "6201c18795f923b808485827eb6e2360fd9e283c99c756dc203ef3acbafc007f"
+        "scripts/score_sync/alignment_pipeline.py": "2d3b4a035d437c6530869035abb3c613151461ad1175f14a6410dd889d186256"
       }
     },
     {
       "id": "graces_diagnostics",
       "name": "装饰音与独立声学诊断",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "origin": "源XML归属、bandpass/Hilbert、邻音联合最小二乘",
       "files": {
-        "scripts/score_sync/refinement_graces.py": "6a2e1f6f67a5464b9a3c3637ff6a2ef36e5a5d4ec504817ccbb959ceb58dd099",
+        "scripts/score_sync/refinement_graces.py": "37d9bb280e3c84f2c304f16ec9c892915583a5578de55cf65aa52179a6722d52",
         "scripts/score_sync/refinement_diagnostics.py": "480abdde769de6e3ab19a0fb2d9376718ca8a6f06ebd54e3b075e08c588550cd"
       }
     },
     {
       "id": "ties",
       "name": "连音链",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "origin": "延音/色彩链",
       "files": {
         "scripts/score_sync/ties.py": "42dc79c2f6978715d827b2c2d870deef81e1b2ef4cff73e6523b504bb4298217"
@@ -77,18 +80,18 @@
     {
       "id": "animation",
       "name": "谱面流动、高亮、声部与换章",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "origin": "稳定布局、8.33ms攻击、滑动转场",
       "files": {
         "scripts/score_sync/visual.py": "6e5b7cc77017d47756e2eb9bb4f39c5c27cd7380fed8f2507361902a586c2e6a",
-        "scripts/browser_render.mjs": "4f2e573dd5c35e2a30d844baf33a73dbf63d03dd922827578e9ee96805b41043",
+        "scripts/browser_render.mjs": "0c93c16ee6b6ca15d9886ec2d4d5a5b9ef658ef05c6de83ad142b3812bd9b7a8",
         "assets/style.json": "eea79e0b396fe7eef03c8af6117091c7a3b797dc0465f4f1a16f8f05f6114ff0"
       }
     },
     {
       "id": "navigation",
       "name": "双层结构导航",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "origin": "双层几何、移动指针与段落分隔",
       "files": {
         "scripts/score_sync/navigation.py": "0c60faa1e47a90884c033209f2e295a82ef2e98bb7fc4c5999ba55e56ff7c12d"
@@ -97,17 +100,17 @@
     {
       "id": "covers",
       "name": "双比例封面场景",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "origin": "通用纸色模板与原生摘谱",
       "files": {
         "scripts/score_sync/covers.py": "71b0b3dce8d284c32b00a6a88b13ac97a30f29103926ebcae1e7c399b4ecd0d8",
-        "scripts/browser_render.mjs": "4f2e573dd5c35e2a30d844baf33a73dbf63d03dd922827578e9ee96805b41043"
+        "scripts/browser_render.mjs": "0c93c16ee6b6ca15d9886ec2d4d5a5b9ef658ef05c6de83ad142b3812bd9b7a8"
       }
     },
     {
       "id": "audio",
       "name": "原声准备与无损主音轨",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "origin": "原PCM样本、裁切身份、连续主音轨",
       "files": {
         "scripts/score_sync/audio.py": "aff289d9273d67369047c9c8c31300057ca98f37cdbdfe65b78adea1d43ab45f",
@@ -117,7 +120,7 @@
     {
       "id": "review",
       "name": "审片PDF与浏览器传输",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "origin": "实际帧审片与字体嵌入",
       "files": {
         "scripts/score_sync/review_pdf.py": "203a75d473a13b57685b10404493672525a5074a11a930d1f0866c37a17fb1e8",
@@ -128,12 +131,39 @@
     {
       "id": "runtime",
       "name": "独立环境与依赖",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "origin": "锁定Python依赖；无渲染环境检查",
       "files": {
         "scripts/bootstrap.py": "73b56a2af25d712695cb5a2695744f7b37c934d4703441d055192c37c0fd604a",
         "scripts/score_sync/environment.py": "ecb87208c4341f31e2b97f7a17aa72d2fa7227c7a2864391147b48a2182e4400",
         "requirements.lock": "44807643cfb6842adc9ba5357d14e200efdd086bdf10a845b5b35edfcff1d913"
+      }
+    },
+    {
+      "id": "advanced_alignment",
+      "name": "源速度分段与宽走廊候选",
+      "version": "1.0.2",
+      "origin": "Adapted from production-used full-route core, guarded v1/v2/v3, state-refinement-v2 and terminal-rest export; no project fits or recordings",
+      "files": {
+        "scripts/alignment_candidate.py": "caffa655f41202e0cc6fcffdcdd46f69b48805dedc5e3626cd1af0641564d7f0",
+        "scripts/score_sync/advanced_alignment/__init__.py": "f91544814cf659d8965b5a6169b6031cca1d7add7a961684760686bca1cc81d8",
+        "scripts/score_sync/advanced_alignment/export_full_clock.py": "cb9944de4ced51361e28b65b5ca68c73c52485702352fa942b1e1de13fa678ce",
+        "scripts/score_sync/advanced_alignment/full_alignment_core.py": "68df67dad246d38b894bb9c01c5b986e18f7751b2b05807507f65695bec45500",
+        "scripts/score_sync/advanced_alignment/guarded_alignment.py": "199fb5c8ec9c37e63589486a40fc465af5dad6e0df42250b817a21aacf602407",
+        "scripts/score_sync/advanced_alignment/guarded_alignment_v2.py": "54e1da2d718a19331ae3e5b050924c9240bd916e6e3e804dc151aedf6637726b",
+        "scripts/score_sync/advanced_alignment/guarded_alignment_v3.py": "d15026c4bafe5c96bb5810ee9de62d3c4b3e826fabb4f6f82558628a0a2371cb",
+        "scripts/score_sync/advanced_alignment/source_tempo_boundary_policy.py": "680173d2c605a41ec75fdd906a0a00b979f45ff215cb70f164ad584c9fcabdff",
+        "scripts/score_sync/advanced_alignment/state_refinement_v2.py": "9c3cbe239f0d9ad7d160ae876168dda74ab165244fc6c815a607314b54ef3757"
+      }
+    },
+    {
+      "id": "remote_render",
+      "name": "有界远程分块队列",
+      "version": "1.0.2",
+      "origin": "Adapted from final-production-04 worker/exporter; configurable host runtime and frozen renderer; no remote credentials",
+      "files": {
+        "scripts/remote_render_worker.py": "1fda0bef3e9a8c28556ade963336f763a87915892f80900f38b5381807bcc9e4",
+        "scripts/browser_render.mjs": "0c93c16ee6b6ca15d9886ec2d4d5a5b9ef658ef05c6de83ad142b3812bd9b7a8"
       }
     },
     {

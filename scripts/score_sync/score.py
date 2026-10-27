@@ -15,6 +15,14 @@ def rat(q): return [q.numerator,q.denominator]
 def val(e,path,default=None):
  n=e.find(path);return n.text if n is not None and n.text is not None else default
 
+def _remember_attribute(state,node):
+ # An unnumbered key changes every staff of this part, superseding older
+ # numbered keys. Replaying stale overrides at a route jump changes the score.
+ if node.tag=='key' and not node.get('number'):
+  for key in list(state):
+   if key[0]=='key':del state[key]
+ state[(node.tag,node.get('number',''))]=copy.deepcopy(node)
+
 def read_xml(path):
  path=Path(path)
  if zipfile.is_zipfile(path):
@@ -49,7 +57,7 @@ def parse_musicxml(path,source_route=None):
    measure_labels[mi]=m.get('number',str(mi+1))
    for child in m:
     if child.tag=='attributes':
-     for a in child:attrs_state[(a.tag,a.get('number',''))]=copy.deepcopy(a)
+     for a in child:_remember_attribute(attrs_state,a)
      div=F(val(child,'divisions',str(div)))
      if div<=0:raise ValueError('MusicXML divisions must be positive')
      time=child.find('time')
@@ -109,7 +117,7 @@ def parse_musicxml(path,source_route=None):
     for child in list(m):
      if child.tag in ('note','forward','backup'):break
      if child.tag=='attributes':
-      for n in child:effective[(n.tag,n.get('number',''))]=copy.deepcopy(n)
+      for n in child:_remember_attribute(effective,n)
       m.remove(child)
     a=ET.Element('attributes')
     order={name:i for i,name in enumerate(('footnote','level','divisions','key','time','staves','part-symbol','instruments','clef','staff-details','transpose','directive','measure-style'))}
@@ -132,15 +140,25 @@ def _xy(node):
  return None
 
 def engraving_musicxml(xml):
- """Temporary Verovio compatibility copy; canonical source keeps direction voices.
+ """Temporary Verovio compatibility copy; canonical source is unchanged.
 
  Verovio's MusicXML importer leaks a direction/voice into subsequent note-layer
  assignment. Note voice, staff, offsets, IDs and direction content
- are retained. Never save this copy over the standard source XML.
+ are retained. Parenthetical dynamics need explicit text around their music
+ glyphs because the importer ignores the parentheses attribute. Never save
+ this copy over the standard source XML.
  """
  root=ET.fromstring(xml)
  for direction in root.findall('.//direction'):
   for voice in list(direction.findall('voice')):direction.remove(voice)
+ for dynamic in root.findall('.//direction-type/dynamics'):
+  if dynamic.get('parentheses')!='yes':continue
+  dynamic.attrib.pop('parentheses')
+  children=list(dynamic)
+  if not (children and children[0].tag=='other-dynamics' and (children[0].text or '').strip()=='(' and children[-1].tag=='other-dynamics' and (children[-1].text or '').strip()==')'):
+   opening=ET.Element('other-dynamics');opening.text='('
+   closing=ET.Element('other-dynamics');closing.text=')'
+   dynamic.insert(0,opening);dynamic.append(closing)
  return ET.tostring(root,encoding='unicode')
 
 def prepare_score(movement,out_dir):
@@ -162,11 +180,14 @@ def prepare_score(movement,out_dir):
  if not tk.loadData(engraving):raise ValueError('Verovio could not load normalized MusicXML')
  from .dashes import restore_dashes
  repaired_mei,dash_report=restore_dashes(xml,tk.getMEI(),s)
- if dash_report:
+ from .keys import restore_staff_keys
+ repaired_mei,key_report=restore_staff_keys(xml,repaired_mei,s)
+ if dash_report or key_report:
   reload_options=tk.getOptions();reload_options.update(inputFrom='mei',xmlIdSeed=314159266)
   tk=verovio.toolkit();tk.setOptions(reload_options)
   if not tk.loadData(repaired_mei):raise ValueError('Verovio could not load repaired temporary MEI')
  (out/'engraving-dashes.json').write_text(json.dumps(dash_report,ensure_ascii=False,indent=2))
+ (out/'engraving-keys.json').write_text(json.dumps(key_report,ensure_ascii=False,indent=2))
  if tk.getPageCount()!=1:raise ValueError('Native canonical engraving must have one continuous system')
  from .hidden_ink import suppress_hidden_beams,suppress_hidden_spanners
  svg,hidden_beams=suppress_hidden_beams(tk.renderToSVG(1),s['events'])

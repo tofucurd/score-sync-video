@@ -1,60 +1,92 @@
 {
   "schema": 1,
-  "version": "1.0.1",
-  "date": "2026-10-24",
-  "scope": "Generic package checks with synthetic fixtures; no full video or cover render.",
+  "version": "1.0.2",
+  "date": "2026-10-28",
+  "scope": "Lightweight unit/synthetic fixtures and static package validation only; no project alignment rerun, render, remote execution, or fresh-session reproduction.",
   "tests": {
-    "command": "python -m pytest tests -q",
-    "passed": 93,
+    "command": ".runtime/bin/python -m pytest -q tests",
+    "passed": 116,
     "failed": 0
   },
   "javascript_syntax": {
     "passed": true,
     "files": [
-      "scripts/browser_render.mjs",
-      "scripts/cdp-transport.mjs",
-      "scripts/print_pdf.mjs"
+      "scripts/browser_render.mjs"
+    ]
+  },
+  "cli_help": {
+    "passed": true,
+    "files": [
+      "scripts/alignment_candidate.py",
+      "scripts/remote_render_worker.py"
     ]
   },
   "skill_frontmatter": {
     "passed": true
   },
-  "environment_doctor": {
-    "passed": true,
-    "rendered": false
-  },
-  "public_pypi": {
-    "packages": 37,
-    "all_versions_available": true,
-    "all_not_yanked": true
-  },
-  "wheel_resolution": {
-    "python": "3.14",
-    "mode": "uv dry-run, binary wheels only",
-    "platforms": [
-      {
-        "platform": "aarch64-apple-darwin",
-        "passed": true
-      },
-      {
-        "platform": "x86_64-unknown-linux-gnu",
-        "passed": true
-      },
-      {
-        "platform": "x86_64-apple-darwin",
-        "passed": false
-      }
-    ]
-  },
   "limitations": [
-    "No fresh full-length render was performed.",
-    "Wheel resolution does not establish cross-platform rendering equivalence.",
-    "Native Windows is not supported.",
-    "The locked llvmlite version lacks an Intel Mac wheel.",
-    "No work-specific score, recording, alignment map or reference pack is included."
+    "The generic advanced-candidate CLI wiring and portable remote worker were not replayed end to end.",
+    "Production module provenance records actual source hashes; it does not establish new recording accuracy.",
+    "Historical release checks below were not rerun unless explicitly listed above."
   ],
-  "ci": {
-    "workflow": ".github/workflows/ci.yml",
-    "purpose": "Install locked dependencies, run synthetic tests, check JavaScript syntax and public package integrity."
+  "previous_release_validation": {
+    "schema": 1,
+    "version": "1.0.1",
+    "date": "2026-10-24",
+    "scope": "Generic package checks with synthetic fixtures; no full video or cover render.",
+    "tests": {
+      "command": "python -m pytest tests -q",
+      "passed": 93,
+      "failed": 0
+    },
+    "javascript_syntax": {
+      "passed": true,
+      "files": [
+        "scripts/browser_render.mjs",
+        "scripts/cdp-transport.mjs",
+        "scripts/print_pdf.mjs"
+      ]
+    },
+    "skill_frontmatter": {
+      "passed": true
+    },
+    "environment_doctor": {
+      "passed": true,
+      "rendered": false
+    },
+    "public_pypi": {
+      "packages": 37,
+      "all_versions_available": true,
+      "all_not_yanked": true
+    },
+    "wheel_resolution": {
+      "python": "3.14",
+      "mode": "uv dry-run, binary wheels only",
+      "platforms": [
+        {
+          "platform": "aarch64-apple-darwin",
+          "passed": true
+        },
+        {
+          "platform": "x86_64-unknown-linux-gnu",
+          "passed": true
+        },
+        {
+          "platform": "x86_64-apple-darwin",
+          "passed": false
+        }
+      ]
+    },
+    "limitations": [
+      "No fresh full-length render was performed.",
+      "Wheel resolution does not establish cross-platform rendering equivalence.",
+      "Native Windows is not supported.",
+      "The locked llvmlite version lacks an Intel Mac wheel.",
+      "No work-specific score, recording, alignment map or reference pack is included."
+    ],
+    "ci": {
+      "workflow": ".github/workflows/ci.yml",
+      "purpose": "Install locked dependencies, run synthetic tests, check JavaScript syntax and public package integrity."
+    }
   }
 }

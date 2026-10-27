@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "release": "1.0.2",
+  "sources": [
+    {
+      "source_module": "guarded_alignment.py",
+      "source_sha256": "5eb7390c67b929b8a80a9a3f625bbebf291422dcdf74d94d38a4d355287760c6",
+      "target": "scripts/score_sync/advanced_alignment/guarded_alignment.py",
+      "adaptation": "package-relative imports; removed installed-skill path injection"
+    },
+    {
+      "source_module": "guarded_alignment_v2.py",
+      "source_sha256": "b8b548e349fdbade20b0914c681908d81d3968ca33b3138fe55baff5594601f2",
+      "target": "scripts/score_sync/advanced_alignment/guarded_alignment_v2.py",
+      "adaptation": "package-relative imports; removed installed-skill path injection"
+    },
+    {
+      "source_module": "guarded_alignment_v3.py",
+      "source_sha256": "c248aa036cb4ac3b16495a8f0fb12653e7bbdd61107f301c0888b16b0d2396e1",
+      "target": "scripts/score_sync/advanced_alignment/guarded_alignment_v3.py",
+      "adaptation": "package-relative imports; removed installed-skill path injection"
+    },
+    {
+      "source_module": "state_refinement_v2.py",
+      "source_sha256": "9e5bde1969355fca357a859993d27874adf477446621da239b1edb4ed0b5a80f",
+      "target": "scripts/score_sync/advanced_alignment/state_refinement_v2.py",
+      "adaptation": "package-relative imports; removed installed-skill path injection"
+    },
+    {
+      "source_module": "full_alignment_core.py",
+      "source_sha256": "2a7211585d89791e62826fb13cbc3af311c899d51231b8640c51013f8f5614a1",
+      "target": "scripts/score_sync/advanced_alignment/full_alignment_core.py",
+      "adaptation": "package-relative imports; no project/recording fit data"
+    },
+    {
+      "source_module": "export_full_clock.py",
+      "source_sha256": "cb9944de4ced51361e28b65b5ca68c73c52485702352fa942b1e1de13fa678ce",
+      "target": "scripts/score_sync/advanced_alignment/export_full_clock.py",
+      "adaptation": "package-relative imports; no project/recording fit data"
+    },
+    {
+      "source_module": "final-production-04/production_worker.py",
+      "source_sha256": "af91e1d345d7ff982dec418be83dca0d15cc66c7b840817d90d5bd0a911320da",
+      "adaptation": "configurable renderer relative path and optional host graphics environment"
+    },
+    {
+      "source_module": "final-production-04/export_programme.py",
+      "source_sha256": "9029e36c2b317e9f34c92e8ce667dd5c9352f51c875ec7eb9685f3fc25f0f553",
+      "adaptation": "only the deployed NVENC settings and memory-related FFmpeg thread settings ported to browser renderer"
+    },
+    {
+      "source_module": "alignment_compat.py:correct_guide",
+      "source_sha256": "06951cadea754b1226cdad98fd9d9b3fd76954c6608b00040e816e9f4e498b23",
+      "adaptation": "time-domain affine monotonic guide correction; diagnostic error wording adapted"
+    },
+    {
+      "source_module": "revision-09/source_tempo_boundary_policy.py",
+      "source_sha256": "df54157261d88f9168fddf7eee311f4db4a6358c2a8a351a3450b2cb471aa888",
+      "target": "scripts/score_sync/advanced_alignment/source_tempo_boundary_policy.py",
+      "adaptation": "complete-source tempo cuts retained; removed work-specific regression fixture"
+    }
+  ],
+  "scope": "General algorithms and bounded queue mechanics only. No project inputs, reviewed fit anchors, final maps or credentials bundled. New package wiring has only unit/static validation; no fresh production replay."
+}
