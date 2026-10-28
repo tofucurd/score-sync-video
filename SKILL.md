@@ -7,7 +7,7 @@ description: "Use when producing a continuous score-synchronized video and match
 
 从MusicXML/MXL、原谱PDF和实际录音制作连续曲谱同步视频。使用纸色、思源宋体、固定蓝游标、单列流动谱面、持续音符高亮及双层曲式导航。作品信息、演奏路线、时间、结构和颜色由当前项目决定；不附带任何作品的乐谱、录音、锚点或项目修订。原始素材只读。
 
-版本 **1.0.2**。组件及文件指纹见[清单](references/components.json)，验证范围见[记录](references/validation-results.json)，移植来源见[来源指纹](references/implementation-provenance.json)。安装条件见[README](README.md)。乐谱排版由[Verovio](https://www.verovio.org/)提供；第三方许可见[声明](THIRD_PARTY_NOTICES.md)。
+版本 **1.0.3**。组件及文件指纹见[清单](references/components.json)，验证范围见[记录](references/validation-results.json)，移植来源见[来源指纹](references/implementation-provenance.json)。安装条件见[README](README.md)。乐谱排版由[Verovio](https://www.verovio.org/)提供；第三方许可见[声明](THIRD_PARTY_NOTICES.md)。
 
 ## 环境与入口
 
@@ -26,7 +26,7 @@ description: "Use when producing a continuous score-synchronized video and match
 
 1. **核对谱源与路线。** `prepare`解析事件和原生谱面。逐页查看PDF，核对音符、休止、移调、节奏、装饰音、连线和表情；有依据的修订写入独立副本。实际反复/跳转写入`source_route`，不假定全做或全省。[谱源与结构](references/score-and-structure.md)说明身份与排谱约束。
 2. **对齐真实录音。** 默认`align`使用`refined`多阶段匹配，输出候选、装饰音证据与全攻击节点审计。检查整条路线、快速织体、入口、变速、重复段与尾声；按录音证据补充源身份约束，再更新受影响映射。[对齐算法](references/alignment.md)提供公式和参数。`coarse`仅为旧候选诊断入口。速度突变或步型饱和时见[宽走廊候选](references/advanced-alignment.md)，显式产生新候选而不替换默认。
-3. **完善结构与画面。** 自行填写两级`structure.json`、自然声部段、`materials.json`、标签和封面配置。跨乐器同材料沿用颜色，未知关系用主色。所有曲式内容来自当前作品，待完成项不能进入预览。详见[视觉规范](references/visual-style.md)。
+3. **完善结构与画面。** 自行填写两级`structure.json`、自然声部段、`materials.json`、标签和封面配置。跨乐器同材料沿用颜色，未知关系用主色。所有曲式内容来自当前作品，待完成项不能进入预览。详见[视觉规范](references/visual-style.md)。有人声或需辨析复杂材料时，使用[右侧唱词栏与整段谱面染色](references/presentation-layers.md)：包含实际渲染模块、全句链分组、固定槽位编译入口、谱号/调号标签、稀疏小节/排练号和输入协议，按当前乐章可选启用。
 4. **记录真实复核。** 当前谱源/录音对应的`pdf-review.json`和`alignment-review.json`由实际工作填写。`preflight`检查绑定、场景数据与封面配置，不启动浏览器。谱源、路线、录音或裁切变化使`alignment-inputs.json`失效，不能只改哈希冒充新复核。
 5. **制作并审查预览。** 默认每章开头30秒，另交实际高清帧、两比例封面和审片PDF。补查快速段、密集页、转场和实际最终编码样段。三名真实agent各看同一完整方案并交叉复核；并发不足可顺次独立审查，不伪造姓名或批准。按发现的问题修复复查，不固定重复轮数。
 6. **确认后冻结渲染。** 新项目默认交预览确认，再用`approve --statement "实际确认原话"`记录授权并`render`。已有渲染授权的同任务用户修正沿用原授权，更新受影响预览/复核后，以`approve --inherit --statement "实际修正指令"`绑定新指纹。冻结后专注渲染，不自行改美术。

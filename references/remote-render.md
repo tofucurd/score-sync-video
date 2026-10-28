@@ -13,3 +13,5 @@
 每块完成后校验格式、帧数，fsync并原子转正，再记源绑定哈希 receipt。恢复时校验完整分块和 receipt；完整 `.partial.mov` 可验收转正，资源/信号中断的不完整分块可重做。退出75是资源或信号checkpoint，退出1是永久失败；失败状态和 errors 不自动重试，必须先有明确 operator 决定并保留故障记录，再修正队列/执行策略。worker 锁避免同包重复调度。仅停止本任务子进程，不杀其他用户渲染。
 
 最终拼接、原声无损封装、章节与交付沿用[交付规范](delivery.md)，此 worker 只产静音分块。当前 skill 更新仅做代码/单元与静态检查，未进行新远程端到端复现。
+
+通用renderer现在导入 `scripts/layers/*.mjs`。远程包必须按相同相对路径携带这些模块并将其哈希列入 `queue.json.files`，即使某个场景没有启用可选层也不能只复制browser_render.mjs。字体及完整表现层payload已经在scene中；远端不重新编译歌词分组/布局或重新计算源标记。

@@ -99,3 +99,5 @@ python3 scripts/check_package.py
 ## 许可
 
 代码和原创文档使用MIT。Verovio是LGPLv3外部依赖，思源宋体使用SIL OFL 1.1。第三方软件及用户提供的乐谱、录音不受项目MIT许可重新授权，详见[第三方声明](THIRD_PARTY_NOTICES.md)。
+
+Optional vocal sidebars and native material-region coloring are bundled and wired into the renderer. See [presentation layers](references/presentation-layers.md) for full-movement inputs, the stable-layout compiler, source bindings and review limits. No work-specific lyrics, translations or theme maps are distributed.

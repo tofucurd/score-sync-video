@@ -119,7 +119,10 @@ def bundle(cfg,movement_dir):
  movement_labels=[match.group(0) if (match:=re.match(r'第[一二三四五六七八九十百零〇两0-9IVXLCDM]+乐章',title)) else f'第{roman(i+1)}乐章' for i,title in enumerate(movement_titles)]
  movement_index=next((i for i,m in enumerate(cfg.get('movements',[])) if m['id']==d.name),None)
  labels=json.dumps(cfg.get('work',{}),ensure_ascii=False)+json.dumps(movement_titles+movement_labels,ensure_ascii=False)+json.dumps(structure,ensure_ascii=False)+json.dumps(geo['staves'],ensure_ascii=False)+'曲谱同步0123456789IVXLCDM'+(d/'score.svg').read_text()
- return {'navigation_data':build_navigation(sections,time_at,a['samples'],rate),'score':score,'geometry':geo,'alignment':a,'audio':audio,'sections':[{**sec,'start_seconds':time_at(sec['start_q']),'children':[{**ch,'start_seconds':time_at(ch['start_q'])} for ch in sec.get('children',[])]} for sec in sections],'cohorts':cohorts,'notes':notes,'svg':(d/'score.svg').read_text(),'fonts':font_css(labels),'work':cfg.get('work',{}),'curve':curve,'time_at':time_at,'duration':a['samples']/rate,'axis':axis,'movement_title':movement_titles[movement_index] if movement_index is not None else d.name,'movement_label':movement_labels[movement_index] if movement_index is not None else ''}
+ from .presentation_layers import load_layers
+ layers,layer_text=load_layers(d,geo)
+ labels+=layer_text
+ return {**layers,'navigation_data':build_navigation(sections,time_at,a['samples'],rate),'score':score,'geometry':geo,'alignment':a,'audio':audio,'sections':[{**sec,'start_seconds':time_at(sec['start_q']),'children':[{**ch,'start_seconds':time_at(ch['start_q'])} for ch in sec.get('children',[])]} for sec in sections],'cohorts':cohorts,'notes':notes,'svg':(d/'score.svg').read_text(),'fonts':font_css(labels),'work':cfg.get('work',{}),'curve':curve,'time_at':time_at,'duration':a['samples']/rate,'axis':axis,'movement_title':movement_titles[movement_index] if movement_index is not None else d.name,'movement_label':movement_labels[movement_index] if movement_index is not None else ''}
 
 def frame_state(b,t,with_navigation=True):
  import numpy as np

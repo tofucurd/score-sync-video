@@ -3,7 +3,7 @@ from pathlib import Path
 import hashlib,json
 
 ROOT=Path(__file__).resolve().parents[1]
-VERSION='1.0.2'
+VERSION='1.0.3'
 GROUPS={
  'workflow':('通用流程、输入绑定与交付',['scripts/score_sync.py','scripts/score_sync/workflow.py','scripts/score_sync/bindings.py'],'章节标题、可继承授权、失败状态'),
  'reference':('外部参考快照接口',['scripts/score_sync/profiles.py'],'读取用户自己提供的已审数据；不附带作品快照'),
@@ -21,6 +21,10 @@ GROUPS={
 }
 GROUPS['advanced_alignment']=('源速度分段与宽走廊候选',['scripts/alignment_candidate.py',*[str(p.relative_to(ROOT)) for p in sorted((ROOT/'scripts/score_sync/advanced_alignment').glob('*.py'))]],'Adapted from production-used full-route core, guarded v1/v2/v3, state-refinement-v2 and terminal-rest export; no project fits or recordings')
 GROUPS['remote_render']=('有界远程分块队列',['scripts/remote_render_worker.py','scripts/browser_render.mjs'],'Adapted from final-production-04 worker/exporter; configurable host runtime and frozen renderer; no remote credentials')
+
+GROUPS['presentation_layers']=('右侧唱词栏与整段谱面材料染色',['scripts/compile_vocals.py','scripts/score_sync/presentation_layers.py','scripts/score_sync/vocal_schedule.py','scripts/score_sync/vocal_layout.py','scripts/layers/program_vocals.mjs','scripts/layers/vocal_overlay.mjs','scripts/layers/region_ink.mjs'],'Source-bound optional layers; production vocal controller and region ink, exact grouping and portable stable-layout compiler; no work-specific payloads')
+
+GROUPS['notation_labels']=('谱号调号标签、源小节排练号与开场',['scripts/compile_notation_labels.py','scripts/score_sync/notation_labels.py','scripts/layers/staff_signatures.mjs','scripts/layers/score_locators.mjs','scripts/layers/opening.mjs'],'Route-aware current-source notation, sparse locators, visibility-only entrance; no work-specific numbering offsets')
 
 def digest(path):
  h=hashlib.sha256()

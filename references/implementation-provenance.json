@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "release": "1.0.2",
+  "release": "1.0.3",
   "sources": [
     {
       "source_module": "guarded_alignment.py",
@@ -58,6 +58,54 @@
       "source_sha256": "df54157261d88f9168fddf7eee311f4db4a6358c2a8a351a3450b2cb471aa888",
       "target": "scripts/score_sync/advanced_alignment/source_tempo_boundary_policy.py",
       "adaptation": "complete-source tempo cuts retained; removed work-specific regression fixture"
+    },
+    {
+      "source_module": "vocal-production-integration/program_vocals.mjs",
+      "source_sha256": "6b363cb4409e377ae86acbd20f54b8a252f2cbd4c6f3e92e39cc24c9e1982b58",
+      "target": "scripts/layers/program_vocals.mjs",
+      "adaptation": "Reusable production renderer; no work-specific text, staff IDs or maps bundled. Legacy de/zh field names mean source/translation in the wire schema."
+    },
+    {
+      "source_module": "vocal-production-integration/vocal_overlay_program_base.mjs",
+      "source_sha256": "3c010cb36267f1c5fe17519a00ba3aaaea6227ce195a2d30cc1302214bc5a0dc",
+      "target": "scripts/layers/vocal_overlay.mjs",
+      "adaptation": "Reusable production renderer; no work-specific text, staff IDs or maps bundled. Legacy de/zh field names mean source/translation in the wire schema."
+    },
+    {
+      "source_module": "material-regions-full/region_ink.mjs",
+      "source_sha256": "0704ede6f0f7fbc170823b14d1f9071cb096712b5c686e12a68a30ee6124e472",
+      "target": "scripts/layers/region_ink.mjs",
+      "adaptation": "Reusable production renderer; no work-specific text, staff IDs or maps bundled. Legacy de/zh field names mean source/translation in the wire schema."
+    },
+    {
+      "source_module": "compile_schedule.py",
+      "source_sha256": "13b817012761ad9a6e17eebb2c8391ebde932cfa03b6db053d981d22710e5a1d",
+      "target": "scripts/score_sync/vocal_schedule.py",
+      "adaptation": "Pure full-source compiler; explicit lane family, no fixed movement, project paths or import-time file access."
+    },
+    {
+      "source_module": "intake/score_locators.mjs",
+      "source_sha256": "8824fe2cdc9d884d213c9b2ac9a220c77454a1b862c50540751658d9abc11f05",
+      "target": "scripts/layers/score_locators.mjs",
+      "adaptation": "Portable source-bound layer; no project files, movement-specific IDs or numbering offsets. Label options explicit."
+    },
+    {
+      "source_module": "intake/presentation.mjs",
+      "source_sha256": "8dae19fd23e187337e40341ce7e86e2880019e003f2047f96ec72556f1ed6205",
+      "target": "scripts/layers/opening.mjs",
+      "adaptation": "Portable source-bound layer; no project files, movement-specific IDs or numbering offsets. Label options explicit."
+    },
+    {
+      "source_module": "material-regions-full/browser_preview.mjs",
+      "source_sha256": "0059ffc406e908007350bbccc9753d1d570424ba4727567bb122d9054a44e278",
+      "target": "scripts/layers/staff_signatures.mjs",
+      "adaptation": "Portable source-bound layer; no project files, movement-specific IDs or numbering offsets. Label options explicit."
+    },
+    {
+      "source_module": "compare_layouts.py",
+      "source_sha256": "be26ed6940059d96d4be9b14ee8a4af9b131b26ca93a5eb5e681709301579c17",
+      "target": "scripts/score_sync/vocal_layout.py",
+      "adaptation": "Font-metric helpers extracted, import-time project reads removed; portable conservative full-source fixed-slot compiler added."
     }
   ],
   "scope": "General algorithms and bounded queue mechanics only. No project inputs, reviewed fit anchors, final maps or credentials bundled. New package wiring has only unit/static validation; no fresh production replay."

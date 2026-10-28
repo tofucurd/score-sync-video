@@ -60,3 +60,7 @@
 `resume`继续同一冻结版本；`status`读状态；`covers`仅重新生成封面；`clean`列缓存，`clean --apply`在交付存在时执行清理。不要在普通命令前加shell插值的未经转义用户文本。
 
 `doctor`、`profiles`、`components`无需project，分别检查环境、列出本地参考快照和组件版本。公开包没有预设快照；用`--profile-dir`指定用户自己的快照目录。`init --reference ...`按[本地快照](reference-packs.md)导入；`preflight`不调用浏览器，不生成图像/音频。同项目已授权的用户修订可用`approve --inherit`保留原授权并绑定新审核，不能从参考项目继承批准。
+
+## 可选表现层
+
+每乐章工作目录中的 `vocals/{timeline,cohort-schedule,layout-schedule}.json` 与 `material-regions.json` 自动接入预览/渲染，参与冻结指纹。输入和制作方法见[表现层接口](presentation-layers.md)。
