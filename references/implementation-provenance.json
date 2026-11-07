@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "release": "1.0.3",
+  "release": "1.1.0",
   "sources": [
     {
       "source_module": "guarded_alignment.py",
@@ -106,7 +106,37 @@
       "source_sha256": "be26ed6940059d96d4be9b14ee8a4af9b131b26ca93a5eb5e681709301579c17",
       "target": "scripts/score_sync/vocal_layout.py",
       "adaptation": "Font-metric helpers extracted, import-time project reads removed; portable conservative full-source fixed-slot compiler added."
+    },
+    {
+      "source_module": "guide-runtime.js",
+      "source_sha256": "5cd67db5106639711405aded0b503fb5e72f1fb5df205a56dbfa46d5cf181d1b",
+      "target": "scripts/layers/guide_runtime.mjs",
+      "adaptation": "Production-frozen compositor; removed work IDs, prose, note identities, local special cases and template code injection. Explicit payload supplies all musical content."
+    },
+    {
+      "source_module": "guide-renderer.mjs",
+      "source_sha256": "737b92a79ea002805be3e828215b821da21e1375775bada484904fa3acc2f89c",
+      "target": "scripts/browser_guide.mjs",
+      "adaptation": "Separate opt-in browser backend with bundled guide modules and whole-movement frame state; ordinary renderer remains independent."
+    },
+    {
+      "source_module": "compact-layout.js",
+      "source_sha256": "640c02d52b628d38259107be074f28de75c7810cdf792b4349d49cc9d63627a2",
+      "target": "scripts/layers/guide_layout.mjs",
+      "adaptation": "Self-contained compact row packer; no work-specific anchor positions or text."
+    },
+    {
+      "source_module": "region_ink.mjs",
+      "source_sha256": "56e797109b8bfd0473ac235e8008ac7f642708a43f52a6fe2ad3ad182e1e4a98",
+      "target": "scripts/layers/guide_ink.mjs",
+      "adaptation": "Native CTM-aware ink ownership, shared beams and explicit coordinate offset; no palette or annotation map from the work."
+    },
+    {
+      "source_module": "connection_capacity.py",
+      "source_sha256": "5fdc5198e8fdfdb8791aec6700dbefa4c0f7552c169805938ebd02d0f42510ea",
+      "target": "scripts/score_sync/guide_connections.py",
+      "adaptation": "Configurable semantic capacity, full overlap components and routing references; removed material-name priority assumptions."
     }
   ],
-  "scope": "General algorithms and bounded queue mechanics only. No project inputs, reviewed fit anchors, final maps or credentials bundled. New package wiring has only unit/static validation; no fresh production replay."
+  "scope": "Reusable algorithms only. No source prose, PDF images, scores, recordings, project annotation maps, local paths or credentials. The source-ledger compiler is new portable wiring around production-derived guide algorithms; lightweight checks do not establish a new end-to-end render."
 }

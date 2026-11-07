@@ -30,6 +30,9 @@ jobs:
       - name: JavaScript syntax
         run: |
           node --check scripts/browser_render.mjs
+          node --check scripts/browser_guide.mjs
+          for layer in scripts/layers/*.mjs; do node --check "$layer"; done
+          node --test tests/test_guide_runtime.mjs
           node --check scripts/cdp-transport.mjs
           node --check scripts/print_pdf.mjs
       - name: Public package integrity

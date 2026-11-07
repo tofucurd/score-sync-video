@@ -10,6 +10,8 @@ An agent skill and Python/JavaScript toolkit for continuous score-synchronized v
 - 真实录音多阶段对齐、装饰音处理、局部约束和音频诊断。
 - 稳定声部集合、平滑布局、滑动换章、持续材料配色。
 - 双层曲式进度条、中文结构提示。
+- 可选 PDF 导赏：增量右栏、持久关键词色、固定谱面标签、协同走线与原生对照谱例。
+- 完整材料染色、紧凑纵向排版和基于实际可见性的标签/连线寿命。
 - 2160p60 HEVC 4:4:4 10-bit MOV、无损音频、内嵌章节和B站章节文本。
 - 当前作品真实谱面生成16:9和4:3封面。
 - 审片、冻结、分块续渲、缓存清理和组件指纹。
@@ -86,11 +88,14 @@ export SCORE_SYNC_CHROME=/absolute/path/to/chromium
 - [项目格式](references/project.md)、[谱源与结构](references/score-and-structure.md)
 - [算法与公式](references/alignment.md)、[视觉与封面](references/visual-style.md)
 - [音频与交付](references/delivery.md)、[本地快照](references/reference-packs.md)
-- [组件版本](references/components.json)、[验证范围](references/validation-results.json)
+- [导赏编译与联动层](references/guide-layers.md)、[唱词与谱面标记](references/presentation-layers.md)
+- [远程渲染](references/remote-render.md)、[组件版本](references/components.json)、[验证范围](references/validation-results.json)
 
 ```bash
 .runtime/bin/python -m pytest tests -q
 node --check scripts/browser_render.mjs
+node --check scripts/browser_guide.mjs
+node --test tests/test_guide_runtime.mjs
 python3 scripts/check_package.py
 ```
 
@@ -101,3 +106,5 @@ python3 scripts/check_package.py
 代码和原创文档使用MIT。Verovio是LGPLv3外部依赖，思源宋体使用SIL OFL 1.1。第三方软件及用户提供的乐谱、录音不受项目MIT许可重新授权，详见[第三方声明](THIRD_PARTY_NOTICES.md)。
 
 Optional vocal sidebars and native material-region coloring are bundled and wired into the renderer. See [presentation layers](references/presentation-layers.md) for full-movement inputs, the stable-layout compiler, source bindings and review limits. No work-specific lyrics, translations or theme maps are distributed.
+
+Release **1.1.0** adds an opt-in guide compiler and the production-derived guide renderer. It contains reusable algorithms, not the original work’s commentary or annotation map. The new integration has lightweight checks only; see the validation record before adopting it for a new work.

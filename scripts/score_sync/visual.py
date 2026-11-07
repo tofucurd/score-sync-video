@@ -122,7 +122,11 @@ def bundle(cfg,movement_dir):
  from .presentation_layers import load_layers
  layers,layer_text=load_layers(d,geo)
  labels+=layer_text
- return {**layers,'navigation_data':build_navigation(sections,time_at,a['samples'],rate),'score':score,'geometry':geo,'alignment':a,'audio':audio,'sections':[{**sec,'start_seconds':time_at(sec['start_q']),'children':[{**ch,'start_seconds':time_at(ch['start_q'])} for ch in sec.get('children',[])]} for sec in sections],'cohorts':cohorts,'notes':notes,'svg':(d/'score.svg').read_text(),'fonts':font_css(labels),'work':cfg.get('work',{}),'curve':curve,'time_at':time_at,'duration':a['samples']/rate,'axis':axis,'movement_title':movement_titles[movement_index] if movement_index is not None else d.name,'movement_label':movement_labels[movement_index] if movement_index is not None else ''}
+ result={**layers,'navigation_data':build_navigation(sections,time_at,a['samples'],rate),'score':score,'geometry':geo,'alignment':a,'audio':audio,'sections':[{**sec,'start_seconds':time_at(sec['start_q']),'children':[{**ch,'start_seconds':time_at(ch['start_q'])} for ch in sec.get('children',[])]} for sec in sections],'cohorts':cohorts,'notes':notes,'svg':(d/'score.svg').read_text(),'fonts':font_css(labels),'work':cfg.get('work',{}),'curve':curve,'time_at':time_at,'duration':a['samples']/rate,'axis':axis,'movement_title':movement_titles[movement_index] if movement_index is not None else d.name,'movement_label':movement_labels[movement_index] if movement_index is not None else ''}
+ if 'guide_payload' in result:
+  from .guide import attach_routing_references
+  attach_routing_references(result['guide_payload'],lambda t:frame_state(result,t))
+ return result
 
 def frame_state(b,t,with_navigation=True):
  import numpy as np
@@ -135,6 +139,11 @@ def frame_state(b,t,with_navigation=True):
  if with_navigation:state['navigation']=render_navigation(navigation_states(b['navigation_data'],round(t*rate),window=round(.6*rate)))
  return state
 
+def renderer_for_spec(spec,mode='video'):
+ """Guide scenes opt in; ordinary video and all covers keep their renderer."""
+ guide=mode!='cover' and any(s.get('guide_payload') is not None for s in spec.get('scenes',[spec]))
+ return ROOT/'scripts'/('browser_guide.mjs' if guide else 'browser_render.mjs')
+
 def run_browser(spec,output,mode='video'):
  node=shutil.which('node')
  if not node:raise RuntimeError('Node.js 22+ required')
@@ -142,7 +151,7 @@ def run_browser(spec,output,mode='video'):
  with tempfile.TemporaryDirectory(prefix='score-scene-') as temp:
   p=Path(temp)/'scene.json';p.write_text(json.dumps(spec,ensure_ascii=False))
   child_env={**os.environ,'SCORE_SYNC_CHROME':chrome_path()}
-  process=subprocess.Popen([node,str(ROOT/'scripts/browser_render.mjs'),'--spec',str(p),'--output',str(Path(output).resolve()),'--mode',mode],start_new_session=True,env=child_env)
+  process=subprocess.Popen([node,str(renderer_for_spec(spec,mode)),'--spec',str(p),'--output',str(Path(output).resolve()),'--mode',mode],start_new_session=True,env=child_env)
   try:
    code=process.wait()
    if code:raise subprocess.CalledProcessError(code,process.args)

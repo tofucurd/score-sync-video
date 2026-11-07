@@ -3,7 +3,7 @@ from pathlib import Path
 import hashlib,json
 
 ROOT=Path(__file__).resolve().parents[1]
-VERSION='1.0.3'
+VERSION='1.1.0'
 GROUPS={
  'workflow':('通用流程、输入绑定与交付',['scripts/score_sync.py','scripts/score_sync/workflow.py','scripts/score_sync/bindings.py'],'章节标题、可继承授权、失败状态'),
  'reference':('外部参考快照接口',['scripts/score_sync/profiles.py'],'读取用户自己提供的已审数据；不附带作品快照'),
@@ -25,6 +25,8 @@ GROUPS['remote_render']=('有界远程分块队列',['scripts/remote_render_work
 GROUPS['presentation_layers']=('右侧唱词栏与整段谱面材料染色',['scripts/compile_vocals.py','scripts/score_sync/presentation_layers.py','scripts/score_sync/vocal_schedule.py','scripts/score_sync/vocal_layout.py','scripts/layers/program_vocals.mjs','scripts/layers/vocal_overlay.mjs','scripts/layers/region_ink.mjs'],'Source-bound optional layers; production vocal controller and region ink, exact grouping and portable stable-layout compiler; no work-specific payloads')
 
 GROUPS['notation_labels']=('谱号调号标签、源小节排练号与开场',['scripts/compile_notation_labels.py','scripts/score_sync/notation_labels.py','scripts/layers/staff_signatures.mjs','scripts/layers/score_locators.mjs','scripts/layers/opening.mjs'],'Route-aware current-source notation, sparse locators, visibility-only entrance; no work-specific numbering offsets')
+
+GROUPS['guide_layers']=('源文案导赏、固定标签与协同连线',['scripts/compile_guide.py','scripts/score_sync/guide.py','scripts/score_sync/guide_connections.py','scripts/browser_guide.mjs','scripts/layers/guide_runtime.mjs','scripts/layers/guide_layout.mjs','scripts/layers/guide_ink.mjs'],'Production-derived guide compositor, incremental sidebar, native comparisons, compact label rows, global routing and source-bound compiler; no work-specific prose, musical IDs or maps')
 
 def digest(path):
  h=hashlib.sha256()

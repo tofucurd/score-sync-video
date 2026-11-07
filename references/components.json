@@ -1,13 +1,13 @@
 {
   "schema": 1,
   "skill": "score-sync-video",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "versioning_note": "Generic public release. No work-specific presets or datasets are bundled.",
   "components": [
     {
       "id": "workflow",
       "name": "通用流程、输入绑定与交付",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "章节标题、可继承授权、失败状态",
       "files": {
         "scripts/score_sync.py": "ce19df625180c88ecb9454d17d3d9866ceeed176a0793df15421b91d69194ab6",
@@ -18,7 +18,7 @@
     {
       "id": "reference",
       "name": "外部参考快照接口",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "读取用户自己提供的已审数据；不附带作品快照",
       "files": {
         "scripts/score_sync/profiles.py": "db8880547ed69e50c7231facd642af634ad91c040027fadcee68ceb2f557c2fa"
@@ -27,7 +27,7 @@
     {
       "id": "score",
       "name": "谱源与原生排谱",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "全谱校勘兼容、表情虚线、隐藏墨迹",
       "files": {
         "scripts/score_sync/score.py": "4c711883425c866516862b4d602e33cb23659386c9cf11dbd8a7a8ecbe3684eb",
@@ -41,7 +41,7 @@
     {
       "id": "engraving_overrides",
       "name": "受校验的排版覆盖",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "按源身份验证的局部排版修订",
       "files": {
         "scripts/score_sync/engraving_overrides.py": "9b20845a3d318f81e1a222685336be072b61cecef0178bce8c4ebf93c6d8cb1c",
@@ -51,7 +51,7 @@
     {
       "id": "alignment",
       "name": "连续录音对齐",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "多阶段连续匹配与受约束细化",
       "files": {
         "scripts/score_sync/alignment.py": "447f24e3a4ea8b599e00aa8481644727d5eb76a1df6728492b8d2efd66921420",
@@ -61,7 +61,7 @@
     {
       "id": "graces_diagnostics",
       "name": "装饰音与独立声学诊断",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "源XML归属、bandpass/Hilbert、邻音联合最小二乘",
       "files": {
         "scripts/score_sync/refinement_graces.py": "37d9bb280e3c84f2c304f16ec9c892915583a5578de55cf65aa52179a6722d52",
@@ -71,7 +71,7 @@
     {
       "id": "ties",
       "name": "连音链",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "延音/色彩链",
       "files": {
         "scripts/score_sync/ties.py": "42dc79c2f6978715d827b2c2d870deef81e1b2ef4cff73e6523b504bb4298217"
@@ -80,10 +80,10 @@
     {
       "id": "animation",
       "name": "谱面流动、高亮、声部与换章",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "稳定布局、8.33ms攻击、滑动转场",
       "files": {
-        "scripts/score_sync/visual.py": "898d7b4747a7753941049cbd88c6fe0e825e0e6166be42d872d7bebf2f6906e8",
+        "scripts/score_sync/visual.py": "dfa21e35f0ba95a6c94cafee4694f1d7b009b4eee68a96327c3406f85faebf47",
         "scripts/browser_render.mjs": "171c9dee82ca38f2c7258e57a001d0f9a738dd5a4a8ea2bd0674309fc04904f8",
         "assets/style.json": "eea79e0b396fe7eef03c8af6117091c7a3b797dc0465f4f1a16f8f05f6114ff0"
       }
@@ -91,7 +91,7 @@
     {
       "id": "navigation",
       "name": "双层结构导航",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "双层几何、移动指针与段落分隔",
       "files": {
         "scripts/score_sync/navigation.py": "0c60faa1e47a90884c033209f2e295a82ef2e98bb7fc4c5999ba55e56ff7c12d"
@@ -100,7 +100,7 @@
     {
       "id": "covers",
       "name": "双比例封面场景",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "通用纸色模板与原生摘谱",
       "files": {
         "scripts/score_sync/covers.py": "71b0b3dce8d284c32b00a6a88b13ac97a30f29103926ebcae1e7c399b4ecd0d8",
@@ -110,7 +110,7 @@
     {
       "id": "audio",
       "name": "原声准备与无损主音轨",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "原PCM样本、裁切身份、连续主音轨",
       "files": {
         "scripts/score_sync/audio.py": "aff289d9273d67369047c9c8c31300057ca98f37cdbdfe65b78adea1d43ab45f",
@@ -120,7 +120,7 @@
     {
       "id": "review",
       "name": "审片PDF与浏览器传输",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "实际帧审片与字体嵌入",
       "files": {
         "scripts/score_sync/review_pdf.py": "203a75d473a13b57685b10404493672525a5074a11a930d1f0866c37a17fb1e8",
@@ -131,7 +131,7 @@
     {
       "id": "runtime",
       "name": "独立环境与依赖",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "锁定Python依赖；无渲染环境检查",
       "files": {
         "scripts/bootstrap.py": "73b56a2af25d712695cb5a2695744f7b37c934d4703441d055192c37c0fd604a",
@@ -142,7 +142,7 @@
     {
       "id": "advanced_alignment",
       "name": "源速度分段与宽走廊候选",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "Adapted from production-used full-route core, guarded v1/v2/v3, state-refinement-v2 and terminal-rest export; no project fits or recordings",
       "files": {
         "scripts/alignment_candidate.py": "caffa655f41202e0cc6fcffdcdd46f69b48805dedc5e3626cd1af0641564d7f0",
@@ -159,7 +159,7 @@
     {
       "id": "remote_render",
       "name": "有界远程分块队列",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "Adapted from final-production-04 worker/exporter; configurable host runtime and frozen renderer; no remote credentials",
       "files": {
         "scripts/remote_render_worker.py": "1fda0bef3e9a8c28556ade963336f763a87915892f80900f38b5381807bcc9e4",
@@ -169,11 +169,11 @@
     {
       "id": "presentation_layers",
       "name": "右侧唱词栏与整段谱面材料染色",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "Source-bound optional layers; production vocal controller and region ink, exact grouping and portable stable-layout compiler; no work-specific payloads",
       "files": {
         "scripts/compile_vocals.py": "1c7cbb3bcac2ca9ed978f24532d979cb2a188408e93407a4782e5cf82a330882",
-        "scripts/score_sync/presentation_layers.py": "3ad36276f42bd452d05ad1d4df1752acb9b6013075834fc65c9ebc42f6f5ca2a",
+        "scripts/score_sync/presentation_layers.py": "a7352392b0fee7843c5062fe6fe7fe4d7ba644c732720f9ef7ab28f444965544",
         "scripts/score_sync/vocal_schedule.py": "fe6f53d54125cde270d7b897b93643020b1ec190c78ce2a9db028a1216a84468",
         "scripts/score_sync/vocal_layout.py": "0b498167ef7b44d876044fe07f2e282519c27ae43b992cec4434d0b6df73f376",
         "scripts/layers/program_vocals.mjs": "6b363cb4409e377ae86acbd20f54b8a252f2cbd4c6f3e92e39cc24c9e1982b58",
@@ -184,7 +184,7 @@
     {
       "id": "notation_labels",
       "name": "谱号调号标签、源小节排练号与开场",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "origin": "Route-aware current-source notation, sparse locators, visibility-only entrance; no work-specific numbering offsets",
       "files": {
         "scripts/compile_notation_labels.py": "808013f2715f61edf9a78f04e437eef0208abbbd69f77ac638dc673ee17c174f",
@@ -192,6 +192,21 @@
         "scripts/layers/staff_signatures.mjs": "9f9532c39cc3300cf4a9fc9f3ded38ff563c418e73da88ee18a5f5cad4277502",
         "scripts/layers/score_locators.mjs": "9a6d7d912de6bb101643c5022a68d4f7f69ef780bfef62bfc590d4f384b362f4",
         "scripts/layers/opening.mjs": "4c9372389c8d2dff2e7835014aa50e58b70ca9a7ea42a2f9440a916647614194"
+      }
+    },
+    {
+      "id": "guide_layers",
+      "name": "源文案导赏、固定标签与协同连线",
+      "version": "1.1.0",
+      "origin": "Production-derived guide compositor, incremental sidebar, native comparisons, compact label rows, global routing and source-bound compiler; no work-specific prose, musical IDs or maps",
+      "files": {
+        "scripts/compile_guide.py": "bc8eeb86497991624439a787104c434b00212ddaf6e2da8f2eb8f9a234185742",
+        "scripts/score_sync/guide.py": "72c07c33a5aebddd40a5cb027ce09c1e40ab51e244772d5d635c4dea064400d2",
+        "scripts/score_sync/guide_connections.py": "c1637abc842b3b22ad44a1453a5c35478fe94b21cef3bb18f14da1ffb1b42c48",
+        "scripts/browser_guide.mjs": "c25e8b25ab80040b4d81d1cb6ddaabd639761a963fbf414b44d5b5740b8a8e72",
+        "scripts/layers/guide_runtime.mjs": "04b182d3b07243bdaa07655994302924bfe764889291463cb8d0c2c7c307e057",
+        "scripts/layers/guide_layout.mjs": "b1e49d14a81121e444bc016595a53b7e00bb6a56b94695bd3de4060c8fbcaf51",
+        "scripts/layers/guide_ink.mjs": "fb11571acba945a7ee7266a7cc3e4b3c7e293c9ae172ecc30a87d01f9a382642"
       }
     },
     {

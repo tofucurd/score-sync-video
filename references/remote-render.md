@@ -15,3 +15,9 @@
 最终拼接、原声无损封装、章节与交付沿用[交付规范](delivery.md)，此 worker 只产静音分块。当前 skill 更新仅做代码/单元与静态检查，未进行新远程端到端复现。
 
 通用renderer现在导入 `scripts/layers/*.mjs`。远程包必须按相同相对路径携带这些模块并将其哈希列入 `queue.json.files`，即使某个场景没有启用可选层也不能只复制browser_render.mjs。字体及完整表现层payload已经在scene中；远端不重新编译歌词分组/布局或重新计算源标记。
+
+## 导赏场景
+
+含 `guide_payload` 的视频场景使用 `renderer:"scripts/browser_guide.mjs"`；普通场景继续使用原 renderer。冻结时携带两个 renderer 实际导入的 `scripts/layers/*.mjs`、CDP 传输模块、场景及字体，并将全部文件写入清单哈希。导赏代码来自包内模块，不执行输入 JSON 提供的 JavaScript。
+
+先基于完整乐章编译 `guide.json` 并由 `visual.bundle` 生成全章 `routing_reference_frames`，再按绝对录音时间切分渲染任务。切块不能重新决定正文持久状态、标签字号、路线通道或连线容量。若为体积裁减连线窗口，需保留完整的相交窗口连通分量及原参考帧，不能只保留当前帧可见的线。改文案、谱面几何、颜色或布局后，依赖它们的分块应按新指纹重做；不能沿用旧 receipt 冒充新结果。

@@ -140,4 +140,14 @@ def load_layers(directory, geometry):
             raise ValueError('Every material needs a short name')
         payload['material_regions'] = data
         text.extend(data['short_names'].values())
+    if (d / 'guide.json').exists():
+        from .guide import load_guide
+        if 'vocalProgramme' in payload:
+            raise ValueError('Guide and vocal sidebar cannot occupy the same movement layout')
+        guide, guide_text = load_guide(d, geometry)
+        for key, value in guide.items():
+            if key in payload and payload[key] != value:
+                raise ValueError('Guide layer conflicts with existing presentation: ' + key)
+            payload[key] = value
+        text.append(guide_text)
     return payload, ''.join(text)
