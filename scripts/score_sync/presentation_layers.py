@@ -130,12 +130,32 @@ def load_layers(directory, geometry):
         palette = data['palette']
         if any(not re.fullmatch(r'#[0-9A-Fa-f]{6}', c) for c in palette.values()):
             raise ValueError('Material colors must be six-digit hex')
-        for region in data['regions']:
+        for region in [*data['regions'], *data.get('display_regions', [])]:
             if region['staff'] not in staff_ids or region['theme'] not in palette or not region['end_x'] > region['start_x']:
                 raise ValueError('Unknown staff/theme or invalid material interval')
-        for identity, theme in data['assignments'].items():
+        for identity, theme in [*data['assignments'].items(), *data.get('display_assignments', {}).items()]:
             if identity not in note_ids or theme not in palette:
                 raise ValueError('Material assignment has unknown event/theme: ' + identity)
+        controls = {c['svg_id']: c for c in geometry.get('controls', [])}
+        for ident, anchors in data.get('spanner_anchors', {}).items():
+            if ident not in controls or any(anchors.get(k) not in note_ids for k in ('start', 'end')):
+                raise ValueError('Unknown source-bound spanner: ' + ident)
+        for ident, point in data.get('point_control_anchors', {}).items():
+            if ident not in controls or not point.get('event_ids') or any(n not in note_ids for n in point['event_ids']):
+                raise ValueError('Unknown point-control anchor: ' + ident)
+        for family in data.get('semantic_families', {}).values():
+            if any(t not in palette for t in family.get('members', [])):
+                raise ValueError('Unknown semantic-family material')
+        for row in data.get('spanner_ink_overrides', []):
+            ident = row['svg_id']; control = controls.get(ident)
+            anchors = data.get('spanner_anchors', {}).get(ident, {})
+            if (not control or ident not in data.get('spanner_anchors', {})
+                    or any(k not in row or k not in anchors for k in ('start', 'end'))
+                    or row.get('policy') != 'follow_material_intervals'
+                    or row.get('class') not in ('slur', 'tie') or row.get('class') != control['class']
+                    or control['staves'] != [row.get('staff')]
+                    or any(row.get(k) != anchors.get(k) for k in ('start', 'end'))):
+                raise ValueError('Stale or invalid reviewed spanner binding: ' + ident)
         if not set(palette) <= set(data['short_names']):
             raise ValueError('Every material needs a short name')
         payload['material_regions'] = data

@@ -2,7 +2,8 @@
 
 All changes are bound to an exact source and SVG input/output pair. This avoids
 reusing a native ID or a numeric offset after another score or engraver changes
-the geometry. Only direct direction text x coordinates are supported.
+the geometry. Direct direction text x and explicitly declared tempo text y
+coordinates are supported; notation geometry is never reserialized.
 """
 from __future__ import annotations
 
@@ -36,21 +37,25 @@ def apply_layout_overrides(svg, manifest, source_sha256):
         raise ValueError('Layout override input SVG hash mismatch; inspect the new engraving instead of reusing old coordinates')
     report = []
     for op in manifest.get('operations', []):
-        if op.get('kind') != 'text_x':
-            raise ValueError('Unsupported layout override kind; only text_x may change')
+        if op.get('kind') == 'text_x':
+            axis, native_class = 'x', 'dir'
+        elif op.get('kind') == 'text_y' and op.get('class') == 'tempo':
+            axis, native_class = 'y', 'tempo'
+        else:
+            raise ValueError('Unsupported layout override kind; use direction text_x or explicit tempo text_y')
         ident = op['id']
         nodes = [n for n in ET.fromstring(svg).iter() if n.get('id') == ident]
-        if len(nodes) != 1 or nodes[0].get('class') != 'dir':
-            raise ValueError(f'Layout override requires one native direction: {ident}')
+        if len(nodes) != 1 or nodes[0].get('class') != native_class:
+            raise ValueError(f'Layout override requires one native {native_class}: {ident}')
         texts = [n for n in nodes[0] if n.tag.split('}')[-1] == 'text']
         if len(texts) != 1 or ' '.join(''.join(texts[0].itertext()).split()) != op.get('text'):
             raise ValueError(f'Layout override text mismatch: {ident}')
         before, after = float(op['before']), float(op['after'])
-        if not math.isfinite(before) or not math.isfinite(after) or float(texts[0].get('x', 'nan')) != before:
-            raise ValueError(f'Layout override old x coordinate mismatch: {ident}')
+        if not math.isfinite(before) or not math.isfinite(after) or float(texts[0].get(axis, 'nan')) != before:
+            raise ValueError(f'Layout override old {axis} coordinate mismatch: {ident}')
         # The exact guarded SVG structure places <text> directly inside <g>.
         pattern = re.compile(r'(<(?:[\w.-]+:)?g\b(?=[^>]*\bid="' + re.escape(ident)
-                             + r'")[^>]*>\s*<(?:[\w.-]+:)?text\b[^>]*\bx=")([^\"]+)(")')
+                             + r'")[^>]*>\s*<(?:[\w.-]+:)?text\b[^>]*\b' + axis + r'=")([^\"]+)(")')
         matches = list(pattern.finditer(svg))
         if len(matches) != 1 or float(matches[0][2]) != before:
             raise ValueError(f'Layout override cannot locate exact text attribute: {ident}')

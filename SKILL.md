@@ -7,7 +7,7 @@ description: "Use when producing or revising score-synchronized videos and match
 
 从MusicXML/MXL、原谱PDF和实际录音制作连续曲谱同步视频。使用纸色、思源宋体、固定蓝游标、单列流动谱面、持续音符高亮及双层曲式导航。作品信息、演奏路线、时间、结构和颜色由当前项目决定；不附带任何作品的乐谱、录音、锚点或项目修订。原始素材只读。
 
-版本 **1.1.0**。组件及文件指纹见[清单](references/components.json)，验证范围见[记录](references/validation-results.json)，移植来源见[来源指纹](references/implementation-provenance.json)。安装条件见[README](README.md)。乐谱排版由[Verovio](https://www.verovio.org/)提供；第三方许可见[声明](THIRD_PARTY_NOTICES.md)。
+版本 **1.2.0**。组件及文件指纹见[清单](references/components.json)，验证范围见[记录](references/validation-results.json)，移植来源见[来源指纹](references/implementation-provenance.json)。安装条件见[README](README.md)。乐谱排版由[Verovio](https://www.verovio.org/)提供；第三方许可见[声明](THIRD_PARTY_NOTICES.md)。
 
 ## 环境与入口
 
@@ -31,6 +31,8 @@ description: "Use when producing or revising score-synchronized videos and match
 5. **制作并审查预览。** 默认每章开头30秒，另交实际高清帧、两比例封面和审片PDF。补查快速段、密集页、转场和实际最终编码样段。三名真实agent各看同一完整方案并交叉复核；并发不足可顺次独立审查，不伪造姓名或批准。按发现的问题修复复查，不固定重复轮数。
 6. **确认后冻结渲染。** 新项目默认交预览确认，再用`approve --statement "实际确认原话"`记录授权并`render`。已有渲染授权的同任务用户修正沿用原授权，更新受影响预览/复核后，以`approve --inherit --statement "实际修正指令"`绑定新指纹。冻结后专注渲染，不自行改美术。
 7. **恢复与交付。** 用户暂停时只停本项目渲染，保留完整分块，`resume`续渲。必要检查通过即交成片、封面和章节，不追加无期限审核。`clean`默认仅列缓存，已授权时才`clean --apply`。[交付规范](references/delivery.md)说明音频、章节、恢复与空间管理。Linux GPU 分块队列及内存约束见[远程渲染](references/remote-render.md)。
+
+原生符号染色缺口、长连线提前消失、首音前装饰音镜头、显式前导动画和作品号封面，见[原生墨迹与开场](references/native-ink-and-entrance.md)。这些通用规则不携带任何作品的配色、对齐锚点或前导时长。
 
 ## 成片约束
 

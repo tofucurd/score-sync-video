@@ -8,7 +8,7 @@
 
 编码沿用实际生产参数：NVENC p7/hq/rext，输入像素格式 yuv444p16le，CQ16，maxrate25M/bufsize50M，编码输出由 FFprobe 核实为 HEVC 10bit 4:4:4。PNG输入、filter、编码 threads=1 降低内存。Chrome 的 raster 线程参数不代表真实占用相同核心数。NVENC 是否支持该格式取决于机器，不能静默降到420。
 
-队列每10秒错峰启动；新任务 admission 至少留6GiB可用RAM，2GiB硬底线，磁盘至少10GiB并保留各活动任务预算。`execution-policy.json` 绑定 `queue_sha256`，可在运行中调 `max_workers,admission_ram_gib`；超过原队列上限时，另存同 queue 哈希的 `execution-cap-override.json`，含 `max_workers,user_statement`，记录已有明确指令。并发由显存、RAM、驱动及画面复杂度决定：曾8路发生 NVENC InitializeEncoder OOM、后来6路完成，是该次运行事实，6不是通用硬上限。
+队列默认每10秒错峰启动；`launch_stagger_seconds` 可在冻结清单中设为1–60秒，经实测资源允许后再缩短。5秒chunk可降低4K临时文件占用，但应保留连续的全局帧状态。调度时；新任务 admission 至少留6GiB可用RAM，2GiB硬底线，磁盘至少10GiB并保留各活动任务预算。`execution-policy.json` 绑定 `queue_sha256`，可在运行中调 `max_workers,admission_ram_gib`；超过原队列上限时，另存同 queue 哈希的 `execution-cap-override.json`，含 `max_workers,user_statement`，记录已有明确指令。并发由显存、RAM、驱动及画面复杂度决定：曾8路发生 NVENC InitializeEncoder OOM、后来6路完成，是该次运行事实，6不是通用硬上限。
 
 每块完成后校验格式、帧数，fsync并原子转正，再记源绑定哈希 receipt。恢复时校验完整分块和 receipt；完整 `.partial.mov` 可验收转正，资源/信号中断的不完整分块可重做。退出75是资源或信号checkpoint，退出1是永久失败；失败状态和 errors 不自动重试，必须先有明确 operator 决定并保留故障记录，再修正队列/执行策略。worker 锁避免同包重复调度。仅停止本任务子进程，不杀其他用户渲染。
 
@@ -21,3 +21,5 @@
 含 `guide_payload` 的视频场景使用 `renderer:"scripts/browser_guide.mjs"`；普通场景继续使用原 renderer。冻结时携带两个 renderer 实际导入的 `scripts/layers/*.mjs`、CDP 传输模块、场景及字体，并将全部文件写入清单哈希。导赏代码来自包内模块，不执行输入 JSON 提供的 JavaScript。
 
 先基于完整乐章编译 `guide.json` 并由 `visual.bundle` 生成全章 `routing_reference_frames`，再按绝对录音时间切分渲染任务。切块不能重新决定正文持久状态、标签字号、路线通道或连线容量。若为体积裁减连线窗口，需保留完整的相交窗口连通分量及原参考帧，不能只保留当前帧可见的线。改文案、谱面几何、颜色或布局后，依赖它们的分块应按新指纹重做；不能沿用旧 receipt 冒充新结果。
+
+对局部显示修订，可依据所有受影响原生墨迹的实际可见帧选择分块，复用其余已完成片段；不能只看起始小节或当前音符时刻。合成清单应保存每块的来源队列、代码/输入指纹和receipt，并输出新版本。公开归档应提供完整重渲入口，不能依赖未分发的旧chunks。

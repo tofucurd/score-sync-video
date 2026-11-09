@@ -3,7 +3,7 @@ from pathlib import Path
 import hashlib,json
 
 ROOT=Path(__file__).resolve().parents[1]
-VERSION='1.1.0'
+VERSION='1.2.0'
 GROUPS={
  'workflow':('通用流程、输入绑定与交付',['scripts/score_sync.py','scripts/score_sync/workflow.py','scripts/score_sync/bindings.py'],'章节标题、可继承授权、失败状态'),
  'reference':('外部参考快照接口',['scripts/score_sync/profiles.py'],'读取用户自己提供的已审数据；不附带作品快照'),
@@ -12,7 +12,7 @@ GROUPS={
  'alignment':('连续录音对齐',['scripts/score_sync/alignment.py','scripts/score_sync/alignment_pipeline.py'],'多阶段连续匹配与受约束细化'),
  'graces_diagnostics':('装饰音与独立声学诊断',['scripts/score_sync/refinement_graces.py','scripts/score_sync/refinement_diagnostics.py'],'源XML归属、bandpass/Hilbert、邻音联合最小二乘'),
  'ties':('连音链',['scripts/score_sync/ties.py'],'延音/色彩链'),
- 'animation':('谱面流动、高亮、声部与换章',['scripts/score_sync/visual.py','scripts/browser_render.mjs','assets/style.json'],'稳定布局、8.33ms攻击、滑动转场'),
+ 'animation':('谱面流动、高亮、声部与换章',['scripts/score_sync/visual.py','scripts/score_sync/camera.py','scripts/score_sync/entrance.py','scripts/browser_render.mjs','assets/style.json'],'稳定布局、8.33ms攻击、滑动转场'),
  'navigation':('双层结构导航',['scripts/score_sync/navigation.py'],'双层几何、移动指针与段落分隔'),
  'covers':('双比例封面场景',['scripts/score_sync/covers.py','scripts/browser_render.mjs'],'通用纸色模板与原生摘谱'),
  'audio':('原声准备与无损主音轨',['scripts/score_sync/audio.py','scripts/score_sync/workflow.py'],'原PCM样本、裁切身份、连续主音轨'),

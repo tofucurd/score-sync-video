@@ -20,13 +20,21 @@ def restore_dashes(xml,mei,score):
     elif n.tag=='forward':cur+=F(n.findtext('duration'))/div
     elif n.tag=='note' and n.find('chord')is None and n.find('grace')is None:cur+=F(n.findtext('duration','0'))/div
     elif n.tag=='direction':
-     local=cur+F(n.findtext('offset','0'))/div;staff=staffmap[p.get('id')+':'+n.findtext('staff','1')];place=n.get('placement');ws=' '.join(text(w)for w in n.findall('direction-type/words')+n.findall('direction-type/dynamics/other-dynamics'))
+     local=cur+F(n.findtext('offset','0'))/div;staff=staffmap[p.get('id')+':'+n.findtext('staff','1')];place=n.get('placement');ws=' '.join([text(w) for w in n.findall('direction-type/words')]+[text(v) if v.tag=='other-dynamics' else v.tag for d in n.findall('direction-type/dynamics') for v in d])
      if ws:texts.setdefault((mi,local,staff,place),[]).append(ws)
      for dash in n.findall('direction-type/dashes'):stream.append(dict(mi=mi,q=starts[mi]+local,local=local,staff=staff,place=place,text=ws,type=dash.get('type'),number=dash.get('number','1'),stamp=1+local*F(beat,4)))
    meters[mi]=beat
   for a in stream:
    ts=texts.get((a['mi'],a['local'],a['staff'],a['place']),[])
    if not a['text'] and len(ts)==1:a['text']=ts[0]
+   if not a['text'] and a['type']=='start':
+    # A separate extender can start after its text, e.g. 'più p' then dashes.
+    # Bind the nearest unambiguous same-measure/same-staff source direction.
+    earlier=[(local,items) for (mi,local,staff,place),items in texts.items() if mi==a['mi'] and local<a['local'] and staff==a['staff'] and place==a['place']]
+    if earlier:
+     local,items=max(earlier,key=lambda row:row[0])
+     if len(items)==1:
+      a['text']=items[0];a['anchor_stamp']=1+local*F(meters[a['mi']],4)
   stream.sort(key=lambda a:(a['q'],0 if a['type']=='stop'else 1));opened={}
   for b in stream:
    key=(b['staff'],b['number'])
@@ -35,11 +43,11 @@ def restore_dashes(xml,mei,score):
     opened[key]=b;continue
    if b['type']!='stop':continue
    if key not in opened:raise ValueError('Orphan source dashes stop')
-   a=opened.pop(key);matches=[x for x in controls[a['mi']]if x.get('staff')==str(a['staff']) and x.get('tstamp')is not None and abs(float(x.get('tstamp'))-float(a['stamp']))<1e-3 and text(x)==a['text'] and (not a['place']or x.get('place')==a['place'])]
+   a=opened.pop(key);matches=[x for x in controls[a['mi']]if x.get('staff')==str(a['staff']) and x.get('tstamp')is not None and abs(float(x.get('tstamp'))-float(a.get('anchor_stamp',a['stamp'])))<1e-3 and text(x)==a['text'] and (not a['place']or x.get('place')==a['place'])]
    if len(matches)!=1:raise ValueError(f'Dashes MEI target not unique: {a}, matches={len(matches)}')
    target=matches[0];endstamp=1+b['local']*F(meters[b['mi']],4);endpoint=f"{b['mi']-a['mi']}m+{float(endstamp):g}"
    target.set('tstamp2',endpoint);target.set('extender','true');target.set('lform','dashed')
-   report.append({'id':target.get(ID),'start_measure':a['mi'],'end_measure':b['mi'],'tstamp2':endpoint})
+   report.append({'id':target.get(ID),'start_measure':a['mi'],'end_measure':b['mi'],'tstamp2':endpoint,'text':a['text'],'source_dash_start':str(a['local']),'text_anchor_stamp':str(a.get('anchor_stamp',a['stamp']))})
   if opened:raise ValueError('Unclosed source dashes')
  E.register_namespace('',N[1:-1])
  return E.tostring(mr,encoding='unicode'),report

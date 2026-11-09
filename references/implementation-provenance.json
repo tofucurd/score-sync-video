@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "release": "1.1.0",
+  "release": "1.2.0",
   "sources": [
     {
       "source_module": "guarded_alignment.py",
@@ -136,6 +136,54 @@
       "source_sha256": "5fdc5198e8fdfdb8791aec6700dbefa4c0f7552c169805938ebd02d0f42510ea",
       "target": "scripts/score_sync/guide_connections.py",
       "adaptation": "Configurable semantic capacity, full overlap components and routing references; removed material-name priority assumptions."
+    },
+    {
+      "source_module": "research/spanner-visibility-04/renderer/browser_render.mjs",
+      "source_sha256": "aef54ebc47735554755f3d8938b35312864abcd5d9134d8c7c232a789e3cf8c1",
+      "target": "scripts/browser_render.mjs",
+      "adaptation": "Actual descendant ink extents, source-clock entrance interpolation and optional visibility audit; opus lockup uses configurable generic coordinates."
+    },
+    {
+      "source_module": "research/spanner-visibility-04/renderer/layers/region_ink.mjs",
+      "source_sha256": "a1e68adc47a1ba9ab2597575cb84cb8c9d9eb5b01f2df3ba68a5191edc225a8b",
+      "target": "scripts/layers/region_ink.mjs",
+      "adaptation": "World/local paint coordinates, shared beams, source-bound direction/slur ownership and text frame fit; no material map or native project IDs."
+    },
+    {
+      "source_module": "scripts/score_sync/camera.py",
+      "source_sha256": "f2d86cc0680ed478d009bf46731a261dc57c45b4cbfd96d012a36ec0cceb4070",
+      "target": "scripts/score_sync/camera.py",
+      "adaptation": "Leading grace camera constraints without shifting music or audio."
+    },
+    {
+      "source_module": "research/material-reference-04/prepare_lead_in.py",
+      "source_sha256": "493a504a92fd12a7ce581b1f2f5b458d63c60d547df0ad833271c3ff79e234c7",
+      "target": "scripts/score_sync/entrance.py",
+      "adaptation": "Explicit configurable source-noise prefix and frozen endpoint entrance; removed all recording, path and duration constants."
+    },
+    {
+      "source_module": "scripts/score_sync/dashes.py",
+      "source_sha256": "867fb29f8b0073167479466d534b59fed6590bbbfe0e4eaf8689d8dbec75597e",
+      "target": "scripts/score_sync/dashes.py",
+      "adaptation": "Source dynamics glyph text and unambiguous preceding direction anchors."
+    },
+    {
+      "source_module": "scripts/score_sync/layout_overrides.py",
+      "source_sha256": "1ec49c599c05b0629533870210e4166562acad31df4e9a9314be28b8fcaa8e79",
+      "target": "scripts/score_sync/layout_overrides.py",
+      "adaptation": "Identity-guarded tempo text y override; retains source/SVG hash protection."
+    },
+    {
+      "source_module": "research/cover-revision-04/renderer/browser_render.mjs",
+      "source_sha256": "38ae005eccfe9d1e9a25356661ded0bff49d5b956336f314d62d18a1634b0374",
+      "target": "scripts/browser_render.mjs",
+      "adaptation": "Measured same-line Op. and Arabic identifier; per-aspect vertical offset moves heading and identifier together."
+    },
+    {
+      "source_module": "scripts/remote_render_worker.py",
+      "source_sha256": "02efd8be78405279c4d0ee99443a92474a5b3b8e0d67975ef64065ade6aa3235",
+      "target": "scripts/remote_render_worker.py",
+      "adaptation": "Validated configurable launch stagger; default resource floors preserved."
     }
   ],
   "scope": "Reusable algorithms only. No source prose, PDF images, scores, recordings, project annotation maps, local paths or credentials. The source-ledger compiler is new portable wiring around production-derived guide algorithms; lightweight checks do not establish a new end-to-end render."

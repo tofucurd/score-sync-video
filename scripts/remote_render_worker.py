@@ -102,6 +102,9 @@ def validate_manifest(root, manifest):
         raise ValueError('At most ten production workers')
     if not manifest.get('job_id') or not isinstance(manifest.get('jobs'), list):
         raise ValueError('Missing job identity/queue')
+    stagger = manifest.get('launch_stagger_seconds', 10)
+    if type(stagger) not in (int, float) or not math.isfinite(stagger) or not 1 <= stagger <= 60:
+        raise ValueError('Invalid launch stagger')
     seen = set()
     for row in manifest['jobs']:
         ident = row['id']
@@ -314,7 +317,7 @@ def run(root, manifest, lock_fd=None):
                 if resource['available_ram_bytes'] < policy['admission_ram_gib'] * GIB or resource['free_bytes'] < reserve + disk_per_worker * GIB * (len(active) + 1):
                     break
                 # Let new Chrome processes allocate before admitting another.
-                if active and time.monotonic()-last_launch < 10:
+                if active and time.monotonic()-last_launch < manifest.get('launch_stagger_seconds', 10):
                     break
                 row = pending.pop(0)
                 current_id = ident = row['id']

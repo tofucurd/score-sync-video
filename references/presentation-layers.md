@@ -78,6 +78,8 @@ layout的每个cohort含 `id`, `de_size`, `phrase_layout`, `phases`。phrase_lay
 
 静态材料色、正在发声的高亮色、蓝游标和人声部颜色是不同语义。挑选色差明显、纸色背景上可读的少量颜色；不要将材料色直接复用成人声颜色。高亮结束恢复材料底色。右栏继续按声部着色，必要时在label旁加主题短名：`vocal_phrase_themes=[{"phrase_id":"…","theme":"theme_a"}]`；合并成员主题不一致时不显示歧义标识。
 
+材料语义族、视觉补全、原生坐标转换、共享符杠、源锚定表情和混合连线的可选字段，见[原生墨迹与开场](native-ink-and-entrance.md)。
+
 ## 输入绑定、冻结与检查
 
 两个层的 `source_hashes` 都必须绑定本乐章的 `score.json`、`geometry.json`、`alignment.json`：

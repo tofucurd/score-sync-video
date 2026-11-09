@@ -91,6 +91,8 @@ def bundle(cfg,movement_dir):
   exact=np.flatnonzero(np.abs(pp[:,1]-at)<1e-9)
   sample=pp[exact[-1],0] if len(exact) else np.interp(at,pp[:,1],pp[:,0])
   knots[float(sample/rate)]=float(x)
+ from .camera import leading_grace_knots
+ knots,camera_review=leading_grace_knots(knots,score['events'],geo['notes'],a['notes'],rate)
  knot_rows=sorted(knots.items());curve=PchipInterpolator([r[0] for r in knot_rows],[r[1] for r in knot_rows])
  def time_at(at):return float(np.interp(q(at),pp[:,1],pp[:,0]))/rate
  ev={e['id']:e for e in score['events']};notes=[]
@@ -116,13 +118,14 @@ def bundle(cfg,movement_dir):
   cohorts.append({'start':start,'end':end,'staves':sorted(active)})
  if not any(c['staves'] for c in cohorts):raise ValueError('No sounding staff belongs to reviewed structure sections')
  movement_titles=[m.get('title',m['id']) for m in cfg.get('movements',[])]
- movement_labels=[match.group(0) if (match:=re.match(r'第[一二三四五六七八九十百零〇两0-9IVXLCDM]+乐章',title)) else f'第{roman(i+1)}乐章' for i,title in enumerate(movement_titles)]
+ movement_labels=[cfg['movements'][i].get('label') or (match.group(0) if (match:=re.match(r'第[一二三四五六七八九十百零〇两0-9IVXLCDM]+乐章',title)) else f'第{roman(i+1)}乐章') for i,title in enumerate(movement_titles)]
  movement_index=next((i for i,m in enumerate(cfg.get('movements',[])) if m['id']==d.name),None)
  labels=json.dumps(cfg.get('work',{}),ensure_ascii=False)+json.dumps(movement_titles+movement_labels,ensure_ascii=False)+json.dumps(structure,ensure_ascii=False)+json.dumps(geo['staves'],ensure_ascii=False)+'曲谱同步0123456789IVXLCDM'+(d/'score.svg').read_text()
  from .presentation_layers import load_layers
  layers,layer_text=load_layers(d,geo)
  labels+=layer_text
  result={**layers,'navigation_data':build_navigation(sections,time_at,a['samples'],rate),'score':score,'geometry':geo,'alignment':a,'audio':audio,'sections':[{**sec,'start_seconds':time_at(sec['start_q']),'children':[{**ch,'start_seconds':time_at(ch['start_q'])} for ch in sec.get('children',[])]} for sec in sections],'cohorts':cohorts,'notes':notes,'svg':(d/'score.svg').read_text(),'fonts':font_css(labels),'work':cfg.get('work',{}),'curve':curve,'time_at':time_at,'duration':a['samples']/rate,'axis':axis,'movement_title':movement_titles[movement_index] if movement_index is not None else d.name,'movement_label':movement_labels[movement_index] if movement_index is not None else ''}
+ result['leading_grace_camera']=camera_review
  if 'guide_payload' in result:
   from .guide import attach_routing_references
   attach_routing_references(result['guide_payload'],lambda t:frame_state(result,t))

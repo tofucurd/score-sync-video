@@ -34,6 +34,35 @@ function sceneCode(S=window.spec){
  const notes=new Map(S.geometry.notes.map(n=>[n.id,nativeNodes.get(nativeId(n.svg_id))]));
  const measures=S.geometry.measures.map(m=>({...m,e:nativeNodes.get(nativeId(m.svg_id))}));
  const controls=(S.geometry.controls||[]).map(c=>({...c,e:nativeNodes.get(nativeId(c.svg_id))}));
+ let visibilityInventory=null,lastViewport=null;
+ const horizontalInk=e=>{
+  const b=e.getBBox(),m=world.getCTM().inverse().multiply(e.getCTM());
+  const xs=[m.a*b.x+m.c*b.y+m.e,m.a*(b.x+b.width)+m.c*b.y+m.e,
+   m.a*b.x+m.c*(b.y+b.height)+m.e,m.a*(b.x+b.width)+m.c*(b.y+b.height)+m.e];
+  return {left:Math.min(...xs),right:Math.max(...xs)};
+ };
+ const refreshVisibilityBounds=()=>{
+  // Measure after fonts and material text-frame fitting, while every native
+  // measure is still mounted. Long slurs/hairpins live under their start bar;
+  // the full descendant ink, not that bar's logical width, owns visibility.
+  if(visibilityInventory)return visibilityInventory;
+  const rows=[];
+  for(const m of measures){
+   const ink=m.e?horizontalInk(m.e):{left:m.x,right:m.x+m.width};
+   m.mountLeft=Math.min(m.x-m.width,ink.left-32);
+   m.mountRight=Math.max(m.x+2*m.width,ink.right+32);
+   rows.push({index:m.index,label:m.label,svg_id:m.svg_id,legacy_left:m.x-m.width,legacy_right:m.x+2*m.width,
+    ink_left:ink.left,ink_right:ink.right,mount_left:m.mountLeft,mount_right:m.mountRight});
+  }
+  const spans=controls.filter(c=>c.e).map(c=>({svg_id:c.svg_id,class:c.class,staves:c.staves,
+   owner_measure:c.e.closest('g.measure')?.id.replace(prefix,''),...horizontalInk(c.e)}));
+  visibilityInventory={measures:rows,controls:spans};return visibilityInventory;
+ };
+ const auditVisibility=()=>{
+  const inventory=refreshVisibilityBounds(),shown=new Map(measures.map(m=>[m.svg_id,m.e?.style.display!=='none']));
+  return {viewport:lastViewport,controls:inventory.controls.filter(c=>lastViewport&&c.right>=lastViewport.left&&c.left<=lastViewport.right)
+   .map(c=>({...c,owner_mounted:shown.get(c.owner_measure)??true}))};
+ };
  const staffs=S.geometry.staves.map(st=>({...st,groups:st.svg_ids.map(id=>nativeNodes.get(nativeId(id))).filter(Boolean)}));
  for(const st of staffs)for(const g of st.groups)g.dataset.originalTransform=g.getAttribute('transform')||'';
  const indices=new Map(staffs.map((st,i)=>[st.id,i])),parents=staffs.map((_,i)=>i),find=i=>parents[i]===i?i:(parents[i]=find(parents[i]));
@@ -45,7 +74,7 @@ function sceneCode(S=window.spec){
  for(const n of S.geometry.notes){const b=extents.get(n.staff);if(b&&Number.isFinite(n.y)){b.top=Math.min(b.top,n.y-750);b.bottom=Math.max(b.bottom,n.y+750)}}
  const components=[...componentMap.values()].map(rows=>({rows,top:Math.min(...rows.map(r=>extents.get(r.id).top)),bottom:Math.max(...rows.map(r=>extents.get(r.id).bottom))}));
  const generated=[...world.querySelectorAll('g.grpSym, g.barLine>path, g.system>path')].filter(e=>!e.closest('g.staff')).map(e=>({...pointBox(e),e,isBracket:e.classList.contains('grpSym'),parentY:world.getCTM().inverse().multiply(e.parentNode.getCTM()).f,original:e.getAttribute('transform')||''}));
- for(const c of controls)c.original=c.e?.getAttribute('transform')||'';
+ for(const c of controls){c.original=c.e?.getAttribute('transform')||'';if(c.e){const b=c.e.getBBox(),m=world.getCTM().inverse().multiply(c.e.getCTM());c.openingBounds={left:b.x*m.a+m.e,right:(b.x+b.width)*m.a+m.e,top:b.y*m.d+m.f};}}
  const labels=el('g',{'font-family':'Han','font-size':28,fill:'#59645F'},root);
  for(const st of staffs)st.labelNode=el('text',{x:350,'text-anchor':'end','data-staff':st.id},labels),st.labelNode.textContent=st.label;
  // Original first-system labels scroll out; fixed labels below own the identity.
@@ -56,21 +85,47 @@ function sceneCode(S=window.spec){
  const qq=x=>Array.isArray(x)?x[0]/x[1]:+x;
  const sharedInk=new Map();for(const[id,n]of notes){const chord=n?.closest('g.chord');if(chord){if(!sharedInk.has(chord))sharedInk.set(chord,[]);sharedInk.get(chord).push(id)}}
  const noteChords=new Map();for(const[ch,ids]of sharedInk)for(const id of ids)noteChords.set(id,ch);
- let prev=[],lastDy={},prevChords=new Set();
- window.draw=F=>{
-  const weights=F.weights,dy={},reserved=components.map(c=>Math.sqrt(Math.max(...c.rows.map(r=>weights[r.id]||0))));
+ const layoutFor=weights=>{
+  const dy={},reserved=components.map(c=>Math.sqrt(Math.max(...c.rows.map(r=>weights[r.id]||0))));
   const total=components.reduce((sum,c,i)=>sum+(c.bottom-c.top+240)*reserved[i],0),scale=Math.min(.22,1640/Math.max(1,total));let cursor=0;
   for(let i=0;i<components.length;i++){const c=components[i],h=c.bottom-c.top,w=reserved[i],center=cursor+h*w/2;for(const row of c.rows)dy[row.id]=center-(c.top+c.bottom)/2;cursor+=(h+240)*w;}
-  lastDy=dy;const offset=100;world.setAttribute('transform',`translate(${1344-F.x*scale+(F.score_offset||0)} ${offset}) scale(${scale})`);
+  return {dy,scale,offset:100};
+ };
+ let prev=[],lastDy={},prevChords=new Set(),openingEndpoints=null;
+ window.draw=F=>{
+  const weights=F.weights;let {dy,scale,offset}=layoutFor(weights);
+  if(F.opening_layout_blend){
+   const b=F.opening_layout_blend;
+   if(!openingEndpoints){
+    const finish=layoutFor(b.target_weights),start=layoutFor(Object.fromEntries(Object.entries(b.target_weights).map(([id,w])=>[id,w*b.initial_weight])));
+    // Freeze the complete entrance viewport once. Bounds do not enter/leave
+    // a per-frame max constraint while the score is moving.
+    const left=Math.min(F.x-(1344-380)/start.scale,F.x-(1344-380)/finish.scale),right=Math.max(F.x+(3730-1344)/start.scale,F.x+(3730-1344)/finish.scale);
+    for(const c of controls){const q=c.openingBounds;if(!q||q.right<left||q.left>right||!c.staves.some(id=>(b.target_weights[id]||0)>0))continue;start.offset=Math.max(start.offset,72-(q.top+(start.dy[c.staves[0]]||0))*start.scale);}
+    openingEndpoints={start,finish};
+   }
+   const {start,finish}=openingEndpoints,p=b.progress,mix=(a,z)=>a+(z-a)*p;
+   scale=mix(start.scale,finish.scale);offset=mix(start.offset,finish.offset);
+   // Interpolate screen-space positions, not native dy alone, so varying scale
+   // cannot introduce a second easing curve or a hard cap transition.
+   dy=Object.fromEntries(staffs.map(st=>[st.id,mix(start.dy[st.id]*start.scale,finish.dy[st.id]*finish.scale)/scale]));
+  }
+  lastDy=dy;
+  if(F.opening_layout_guard){
+   const left=F.x-(1344-380)/scale,right=F.x+(3730-1344)/scale;
+   for(const c of controls){const b=c.openingBounds;if(!b||b.right<left||b.left>right||!c.staves.some(id=>(weights[id]||0)>0))continue;offset=Math.max(offset,72-(b.top+(dy[c.staves[0]]||0))*scale);}
+  }
+  world.setAttribute('transform',`translate(${1344-F.x*scale+(F.score_offset||0)} ${offset}) scale(${scale})`);
   let verticalChanged=false;
   for(const st of staffs){const w=weights[st.id]||0;if(st.lastWeight!==w||st.lastDy!==(dy[st.id]||0)){verticalChanged=true;for(const g of st.groups){g.style.opacity=w;g.setAttribute('transform',`translate(0 ${dy[st.id]||0}) ${g.dataset.originalTransform}`)}st.lastWeight=w;st.lastDy=dy[st.id]||0;}st.labelNode.setAttribute('y',(st.y+(dy[st.id]||0))*scale+offset+10);st.labelNode.style.opacity=w;}
   if(verticalChanged){
   for(const c of controls)if(c.e&&c.staves.length&&!c.e.closest('g.staff')){c.e.style.opacity=Math.max(...c.staves.map(id=>weights[id]||0));c.e.setAttribute('transform',`translate(0 ${dy[c.staves[0]]||0}) ${c.original}`);}
   for(const item of generated){const candidates=staffs.filter(st=>st.y>=item.top-400&&st.y<=item.bottom+400),presence=1-candidates.reduce((p,st)=>p*(1-(weights[st.id]||0)),1);const one=candidates.reduce((sum,st,i)=>sum+(weights[st.id]||0)*candidates.reduce((p,s,j)=>p*(i===j?1:1-(weights[s.id]||0)),1),0);item.e.style.opacity=item.isBracket?Math.max(0,presence-one):presence;if(presence>1e-9&&item.bottom-item.top>1){const edge=(rows,sign)=>{let remaining=1,sum=0;for(const st of rows){const p=remaining*(weights[st.id]||0);sum+=p*(st.y+dy[st.id]+sign*st.height/2);remaining*=1-(weights[st.id]||0)}return sum/presence};const a=edge(candidates,-1),b=edge([...candidates].reverse(),1),k=(b-a)/(item.bottom-item.top);item.e.setAttribute('transform',`matrix(1 0 0 ${k} 0 ${a-k*item.top+(k-1)*item.parentY}) ${item.original}`);}}
   }
-  // Keep immediate-neighbour measures mounted for ties and spanning controls.
-  const left=F.x-(1344-380)/scale,right=F.x+(3730-1344)/scale;
-  for(let i=0;i<measures.length;i++){const m=measures[i];if(m.e){const show=(m.x+m.width*2>=left&&m.x-m.width<=right)?'':'none';if(m.e.style.display!==show)m.e.style.display=show;}}
+  refreshVisibilityBounds();
+  const left=F.x-(1344-380+(F.score_offset||0))/scale,right=F.x+(3730-1344-(F.score_offset||0))/scale;
+  lastViewport={left,right,scale,score_offset:F.score_offset||0};
+  for(const m of measures)if(m.e){const show=m.mountRight>=left&&m.mountLeft<=right?'':'none';if(m.e.style.display!==show)m.e.style.display=show;}
   for(const id of prev){const n=notes.get(id);if(n){n.style.color='';n.style.fill='';}}
   prev=Object.keys(F.highlights);
   for(const[id,h]of Object.entries(F.highlights)){const n=notes.get(id);if(!n)continue;const rgb=[1,3,5].map(i=>Math.round(parseInt(h.color.slice(i,i+2),16)*h.weight));n.style.color=n.style.fill=`rgb(${rgb.join(',')})`;}
@@ -90,11 +145,25 @@ function sceneCode(S=window.spec){
    txt(margin-3,1090,'曲谱同步',wide?144:136,500,blue,10);
    txt(wide?1040:940,1045,words.performer_zh,wide?65:60,400,ink,8);
    txt(wide?1040:940,1138,words.ensemble_zh,wide?49:46,400,'#626A63',5);
-   const cx=wide?3000:2220;
-   if(words.work_type_en)txt(cx,wide?380:450,words.work_type_en,wide?34:32,400,blue,8,'middle');
-   const number=txt(cx,1000,S.number,wide?730:640,300,blue,wide?-20:-18,'middle');
-   const maxNumberWidth=wide?920:820;
-   if(number.getComputedTextLength()>maxNumberWidth)number.setAttribute('font-size',+number.getAttribute('font-size')*maxNumberWidth/number.getComputedTextLength());
+   const identifier=S.cover_identifier;
+   const layout=identifier?.layout||{},identifierWidth=layout.width??(wide?1575:1152);
+   const cx=identifier?S.width-margin-identifierWidth/2:(wide?3000:2220);
+   const typeLabel=words.work_type_en?txt(cx,wide?380:450,words.work_type_en,wide?34:32,400,blue,8,'middle'):null;
+   if(identifier){
+    // The catalogue prefix and number form one measured line. The prefix is
+    // part of the identifier rather than a separate tiny caption above it.
+    const group=el('g',{class:'cover-opus-lockup','aria-label':`Op. ${identifier.value}`},root);
+    const prefix=txt(0,0,'Op.',layout.prefix_size??(wide?280:260),300,blue,0);group.append(prefix);
+    const number=txt(prefix.getComputedTextLength()+(layout.gap??(wide?48:42)),0,identifier.value,layout.number_size??(wide?720:660),300,blue,layout.tracking??(wide?-14:-12));group.append(number);
+    const identifierOffset=layout.offset_y??0;
+    const box=group.getBBox(),scale=Math.min(1,identifierWidth/box.width),baseline=(layout.baseline??(wide?1030:1040))+identifierOffset;
+    group.setAttribute('transform',`translate(${cx-(box.x+box.width/2)*scale} ${baseline}) scale(${scale})`);
+    if(typeLabel)typeLabel.setAttribute('y',(layout.heading_y??(wide?425:540))+identifierOffset);
+   }else{
+    const number=txt(cx,1000,S.number,wide?730:640,300,blue,wide?-20:-18,'middle');
+    const maxNumberWidth=wide?920:820;
+    if(number.getComputedTextLength()>maxNumberWidth)number.setAttribute('font-size',+number.getAttribute('font-size')*maxNumberWidth/number.getComputedTextLength());
+   }
    const defs=el('defs',{},root);for(const d of [...parsed.querySelectorAll('defs')])defs.append(d.cloneNode(true));
    const native=el('g',{id:worldId,color:ink},root);
    for(const c of [...inner.children])if(c.tagName!=='defs')native.append(document.importNode(c,true));
@@ -202,7 +271,7 @@ function sceneCode(S=window.spec){
   text(S.width-margin,2035,S.work.ensemble||'',wide?60:52,400,'#59645F','end');
   return new XMLSerializer().serializeToString(root);
  };
- window.ready=true;return {root,draw:window.draw,cover:window.cover,background,readingLine,scoreClip,labels,nav,movementCorner,setNavigation};
+ window.ready=true;return {root,draw:window.draw,cover:window.cover,background,readingLine,scoreClip,labels,nav,movementCorner,setNavigation,refreshVisibilityBounds,auditVisibility};
 }
 try{
  chrome=spawn(chromePath,['--headless','--remote-debugging-address=127.0.0.1','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run','--no-default-browser-check','--disable-background-networking','--disable-extensions','--force-color-profile=srgb','about:blank'],{stdio:'ignore'});
@@ -220,8 +289,15 @@ try{
  };
  await send('Emulation.setDeviceMetricsOverride',{width:spec.width,height:spec.height,deviceScaleFactor:1,mobile:false});await evaluate(`document.body.style.cssText='margin:0;background:#FAF8F1;overflow:hidden';window.spec=${JSON.stringify(spec)};window.sceneCode=${sceneCode.toString()};window.actors=(window.spec.scenes||[window.spec]).map(s=>window.sceneCode({...s,width:window.spec.width,height:window.spec.height}));if(window.spec.scenes)window.actors.forEach((a,i)=>{a.background.style.display=i?'none':'';a.readingLine.style.display=i?'none':''});window.drawFrame=f=>{if(f.actors){for(const a of window.actors){a.scoreClip.style.opacity=0;a.labels.style.opacity=0;a.nav.style.opacity=0;a.movementCorner.style.opacity=0;if(a.vocalLayer)a.vocalLayer.style.opacity=0}for(const p of f.actors){const a=window.actors[p.scene];a.draw({...p.state,score_offset:p.offset||0});a.scoreClip.style.opacity=a.labels.style.opacity=p.opacity;a.movementCorner.style.opacity=p.title_opacity??p.opacity;if(a.vocalLayer)a.vocalLayer.style.opacity=p.opacity}window.actors[0].setNavigation(f.navigation);window.actors[0].nav.style.opacity=1}else window.actors[0].draw(f)};document.fonts.ready`);
  await evaluate("Promise.all([document.fonts.load('30px Han'),document.fonts.load('300 30px Han'),document.fonts.load('500 30px Han')])");
- if(mode!=='cover')await evaluate(`window.openingState=${openingState.toString()};window.installScoreLocators=${installScoreLocators.toString()};window.installStaffSignatures=${installStaffSignatures.toString()};window.actors.forEach((a,i)=>{const s=(window.spec.scenes||[window.spec])[i];a.locators=window.installScoreLocators(a,s);a.signatures=window.installStaffSignatures(a,s);const native=a.draw;a.draw=f=>{const presented=window.openingState(f,s.presentation);native(presented);a.signatures.draw(presented);a.locators.draw(presented);const loc=a.scoreClip.querySelector('.score-locators');if(loc)loc.style.opacity=s.presentation&&f.seconds<s.presentation.duration_seconds?Math.max(0,...Object.values(presented.weights)):1}});`);
+ if(mode!=='cover')await evaluate(`window.openingState=${openingState.toString()};window.installScoreLocators=${installScoreLocators.toString()};window.installStaffSignatures=${installStaffSignatures.toString()};window.actors.forEach((a,i)=>{const s=(window.spec.scenes||[window.spec])[i];a.locators=window.installScoreLocators(a,s);a.signatures=window.installStaffSignatures(a,s);const native=a.draw;a.draw=f=>{const presented=f.delivery_entrance?f:window.openingState(f,s.presentation);native(presented);a.signatures.draw(presented);a.locators.draw(presented);const loc=a.scoreClip.querySelector('.score-locators');if(loc)loc.style.opacity=!f.delivery_entrance&&s.presentation&&f.seconds<s.presentation.duration_seconds?Math.max(0,...Object.values(presented.weights)):1}});`);
  if(mode!=='cover')await evaluate(`window.installProgramVocals=${installProgramVocals.toString()};window.installVocalOverlay=${installVocalOverlay.toString()};window.createMaterialIndex=${createMaterialIndex.toString()};window.installMaterialRegions=${installMaterialRegions.toString()};window.actors.forEach((a,i)=>{const s=(window.spec.scenes||[window.spec])[i];if(s.vocalProgramme){a.vocalLayer=document.createElementNS('http://www.w3.org/2000/svg','g');a.root.append(a.vocalLayer);a.programme=window.installProgramVocals({...a,root:a.vocalLayer},s.vocalProgramme,window.installVocalOverlay);const native=a.draw;a.draw=f=>{const colors=a.programme.colorForStaff(f.seconds);const highlights=Object.fromEntries(Object.entries(f.highlights).map(([id,h])=>[id,s.vocal_note_staves?.[id]?{...h,color:colors[s.vocal_note_staves[id]]||h.color}:h]));native({...f,highlights});a.programme.draw(f)}}if(s.material_regions){a.materialRegions=window.installMaterialRegions(a,s,window.createMaterialIndex);const native=a.draw;a.draw=f=>{native(f);a.materialRegions.draw(f)}}});`);
+ if(mode!=='cover'){
+  if(spec.visibility_inventory_output)fs.writeFileSync(spec.visibility_inventory_output,JSON.stringify(await evaluate('window.actors.map(a=>a.refreshVisibilityBounds())'),null,2));
+  else await evaluate('window.actors.forEach(a=>a.refreshVisibilityBounds())');
+ }
+ // Delivery-only entrance uses group opacity, not cohort weights: all notation,
+ // labels and locators keep their final scale and vertical positions.
+ if(mode!=='cover')await evaluate(`window.actors.forEach(a=>{const native=a.draw;a.draw=f=>{native(f);if(f.entrance_opacity!==undefined){const alpha=Math.max(0,Math.min(1,f.entrance_opacity));for(const node of [a.scoreClip,a.labels,a.nav,a.movementCorner,a.readingLine])node.style.opacity=alpha}}});`);
  if(mode==='cover'){
   await evaluate(`window.draw(${JSON.stringify(spec.frames[0])})`);const svg=await evaluate(`window.cover(${JSON.stringify(spec.frames[0])})`);fs.writeFileSync(out,svg);await auditFonts();
   const im=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});const png=out.replace(/\.svg$/,'.png');fs.writeFileSync(png,Buffer.from(im.data,'base64'));
@@ -231,7 +307,10 @@ try{
    const encoding=spec.encoder==='hevc_nvenc'?['-c:v','hevc_nvenc','-preset','p7','-tune','hq','-profile:v','rext','-pix_fmt','yuv444p16le','-rc','vbr','-cq','16','-b:v','0','-maxrate','25M','-bufsize','50M','-tag:v','hvc1','-threads:v','1']:spec.final?['-c:v','libx265','-preset','medium','-crf','16','-profile:v','main444-10','-maxrate','16M','-bufsize','32M','-x265-params','pools=4:frame-threads=2:log-level=error:open-gop=0:cbqpoffs=-8:crqpoffs=-8','-pix_fmt','yuv444p10le','-tag:v','hvc1']:['-c:v','libx264','-preset','fast','-crf','20','-pix_fmt','yuv420p'];
    encoder=spawn('ffmpeg',['-nostdin','-v','error','-y','-filter_threads','1','-threads','1','-f','image2pipe','-vcodec','png','-framerate',String(spec.fps),'-i','pipe:0',...(spec.silent?[]:['-ss',String(spec.start_seconds),'-i',spec.audio]),'-t',String(spec.duration),'-map','0:v:0',...(spec.silent?['-an']:['-map','1:a:0','-c:a',spec.bits>24?'pcm_s32le':'alac',...(spec.bits>24?[]:['-sample_fmt',spec.bits<=16?'s16p':'s32p','-bits_per_raw_sample',String(spec.bits)])]),...encoding,'-color_primaries','bt709','-color_trc','bt709','-colorspace','bt709','-movflags','+faststart',out],{stdio:['pipe','ignore','inherit']});
   }
-  for(const f of spec.frames){if(cancelled)throw Error('Render cancelled');await evaluate(`window.drawFrame(${JSON.stringify(f)})`);if(mode==='frame'){if(spec.presentation_audit_output)fs.writeFileSync(spec.presentation_audit_output,JSON.stringify(await evaluate('window.actors.map(a=>({vocal:a.programme?.audit(),material:a.materialRegions?.audit(),locators:a.locators?.audit(),signatures:a.signatures?.audit()}))'),null,2));await auditFonts();if(spec.navigation_audit_output)fs.writeFileSync(spec.navigation_audit_output,await evaluate('window.actors[0].nav.outerHTML'));}const r=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false,optimizeForSpeed:true});const png=Buffer.from(r.data,'base64');if(encoder){if(!encoder.stdin.write(png))await once(encoder.stdin,'drain');}else fs.writeFileSync(out,png);}
+  const motionAudit=[],visibilityAudit=[];
+  for(const f of spec.frames){if(cancelled)throw Error('Render cancelled');await evaluate(`window.drawFrame(${JSON.stringify(f)})`);if(spec.visibility_frame_audit_output)visibilityAudit.push({seconds:f.seconds,actors:await evaluate('window.actors.map(a=>a.auditVisibility())')});if(spec.visibility_audit_only)continue;if(spec.motion_audit_output)motionAudit.push({frame:motionAudit.length,seconds:f.seconds,actors:await evaluate(`window.actors.map(a=>{const w=a.scoreClip.firstElementChild,m=w.getCTM(),note=w.querySelector('.notehead')?.getBoundingClientRect();return{matrix:{a:m.a,d:m.d,e:m.e,f:m.f},first_note:note?{x:note.x,y:note.y,width:note.width,height:note.height}:null,labels:[...a.labels.querySelectorAll('text[data-staff]')].map(n=>({staff:n.getAttribute('data-staff'),y:+n.getAttribute('y'),opacity:+n.style.opacity}))}})`)});if(spec.motion_audit_only)continue;if(mode==='frame'){if(spec.presentation_audit_output)fs.writeFileSync(spec.presentation_audit_output,JSON.stringify(await evaluate('window.actors.map(a=>({vocal:a.programme?.audit(),material:a.materialRegions?.audit(),locators:a.locators?.audit(),signatures:a.signatures?.audit()}))'),null,2));await auditFonts();if(spec.navigation_audit_output)fs.writeFileSync(spec.navigation_audit_output,await evaluate('window.actors[0].nav.outerHTML'));}const r=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false,optimizeForSpeed:true});const png=Buffer.from(r.data,'base64');if(encoder){if(!encoder.stdin.write(png))await once(encoder.stdin,'drain');}else fs.writeFileSync(out,png);}
+  if(spec.motion_audit_output)fs.writeFileSync(spec.motion_audit_output,JSON.stringify(motionAudit));
+  if(spec.visibility_frame_audit_output)fs.writeFileSync(spec.visibility_frame_audit_output,JSON.stringify(visibilityAudit));
   if(encoder){encoder.stdin.end();const [code]=await once(encoder,'exit');if(code)throw Error('FFmpeg failed '+code);}
  }
 }finally{

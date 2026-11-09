@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 
 ASPECTS = {'16x9': (3840, 2160), '4x3': (2880, 2160)}
 WORD_KEYS = ('composer_en', 'composer_zh', 'performer_zh', 'ensemble_zh',
@@ -28,6 +29,24 @@ def build_cover_specs(project_cfg, bundle):
     if not isinstance(words.get('work_type_en', ''), str):
         raise ValueError('cover.words.work_type_en must be a string; omit it or use an empty string to hide the work type')
     words = {**words, 'work_type_en': words.get('work_type_en', '')}
+    identifier = None
+    if selection.get('identifier') == 'opus':
+        opus = str(project_cfg.get('work', {}).get('opus', ''))
+        match = re.fullmatch(r'Op\.?\s*(\d+)', opus, re.IGNORECASE)
+        if not match:
+            raise ValueError('An opus cover identifier requires work.opus, for example Op.18')
+        identifier = {'kind': 'opus', 'label': 'OPUS', 'value': match.group(1)}
+    layouts = selection.get('identifier_layout', {})
+    allowed = {'width', 'prefix_size', 'number_size', 'gap', 'tracking', 'baseline', 'heading_y', 'offset_y'}
+    if not isinstance(layouts, dict) or set(layouts) - set(ASPECTS):
+        raise ValueError('cover.identifier_layout keys must be cover aspect names')
+    for aspect, values in layouts.items():
+        if not isinstance(values, dict) or set(values) - allowed:
+            raise ValueError('Unknown cover identifier layout property: ' + aspect)
+        if any(type(v) not in (int, float) or not math.isfinite(v) for v in values.values()):
+            raise ValueError('Cover identifier layout requires finite numeric coordinates')
+        if any(values.get(k, 1) <= 0 for k in ('width', 'prefix_size', 'number_size')):
+            raise ValueError('Cover identifier sizes must be positive')
     staves = selection.get('staves')
     known = {s['id'] for s in bundle['geometry']['staves']}
     if not isinstance(staves, list) or not staves or len(set(staves)) != len(staves) or any(s not in known for s in staves):
@@ -59,7 +78,8 @@ def build_cover_specs(project_cfg, bundle):
               + json.dumps(bundle['geometry']['staves'], ensure_ascii=False)
               + json.dumps(bundle['sections'], ensure_ascii=False) + bundle['svg']
               + json.dumps(words, ensure_ascii=False) + '曲谱同步'
-              + visual.roman(project_cfg.get('work', {}).get('number')))
+              + visual.roman(project_cfg.get('work', {}).get('number'))
+              + json.dumps(identifier or {}, ensure_ascii=False))
     fonts = visual.font_css(corpus)
     base = {k: v for k, v in bundle.items()
             if k not in ('curve', 'time_at', 'score', 'alignment', 'audio', 'notes')}
@@ -68,6 +88,7 @@ def build_cover_specs(project_cfg, bundle):
         specs[tag] = {**base, 'fonts': fonts, 'frames': [state], 'width': width,
                       'height': height, 'number': visual.roman(project_cfg.get('work', {}).get('number')),
                       'cover_layout': 'paper', 'cover_words': dict(words),
+                      'cover_identifier': {**identifier, 'layout': dict(layouts.get(tag, {}))} if identifier else None,
                       'cover_selection': {'measures': [m['svg_id'] for m in phrases[tag]],
                                           'staves': list(staves)}}
     return specs
